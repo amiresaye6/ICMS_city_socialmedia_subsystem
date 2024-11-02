@@ -28,15 +28,44 @@ The **City Social Media Platform** is a key subsystem of the **Integrated City M
 ├── frontend/
 │   ├── public/
 │   ├── src/
-│   │   ├── components/       # UI Components
-│   │   ├── pages/            # Application pages (Home, Alerts, etc.)
-│   │   ├── services/         # API services
-│   │   └── store/            # Redux store and slices
+│   │   ├── components/                # UI Components
+│   │   │   ├── Header.component.js     # Header component
+│   │   │   ├── Footer.component.js     # Footer component
+│   │   │   └── PostCard.component.js   # Post card component
+│   │   ├── pages/                     # Application pages (Home, Alerts, etc.)
+│   │   │   ├── Home.page.js           # Home page
+│   │   │   ├── Alerts.page.js         # Alerts page
+│   │   │   └── Profile.page.js        # User profile page
+│   │   ├── services/                  # API services
+│   │   │   ├── user.service.js         # User API service
+│   │   │   ├── post.service.js         # Post API service
+│   │   │   └── alert.service.js        # Alert API service
+│   │   └── store/                     # Redux store and slices
+│   │       ├── store.js                # Store configuration
+│   │       ├── userSlice.js            # User slice
+│   │       └── postSlice.js            # Post slice
+│   ├── .env                            # Environment variables for frontend
+│   ├── .gitignore                      # Git ignore file for frontend
+│   └── package.json                    # Frontend dependencies and scripts
 ├── backend/
-│   ├── models/               # MongoDB schema definitions
-│   ├── routes/               # API routes
-│   ├── controllers/          # Request handlers
-│   └── middleware/           # Authorization, authentication, etc.
+│   ├── models/                        # MongoDB schema definitions
+│   │   ├── User.model.js              # User schema
+│   │   ├── Post.model.js              # Post schema
+│   │   └── Comment.model.js           # Comment schema
+│   ├── routes/                        # API routes
+│   │   ├── users.routes.js            # User routes
+│   │   ├── posts.routes.js            # Post routes
+│   │   └── alerts.routes.js           # Alert routes
+│   ├── controllers/                   # Request handlers
+│   │   ├── user.controller.js          # User request handlers
+│   │   ├── post.controller.js          # Post request handlers
+│   │   └── alert.controller.js         # Alert request handlers
+│   ├── middleware/                    # Authorization, authentication, etc.
+│   │   ├── auth.middleware.js          # Authentication middleware
+│   │   └── error.middleware.js         # Error handling middleware
+│   ├── .env                            # Environment variables for backend
+│   ├── .gitignore                      # Git ignore file for backend
+│   └── server.js                       # Main server file
 └── README.md
 ```
 
