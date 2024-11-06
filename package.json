@@ -1,0 +1,15 @@
+{
+  "name": "icms_city_socialmedia_subsystem",
+  "version": "1.0.0",
+  "description": "## Overview The **City Social Media Platform** is a key subsystem of the **Integrated City Management System (ICMS)**. This platform is designed to bridge the gap between citizens and city authorities, enabling streamlined communication regarding city events, alerts, and issue reporting. Citizens can post text, images, and videos related to city infrastructure, tag relevant departments, and receive updates on issues they report. City authorities can respond, provide feedback, and manage citywide announcements to keep citizens informed.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "Amir Alsayed",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}
