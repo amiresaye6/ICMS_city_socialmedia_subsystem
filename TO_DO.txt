@@ -1,0 +1,2 @@
+1/ where to add the files like images, videos, audios
+s3buckets >> aws

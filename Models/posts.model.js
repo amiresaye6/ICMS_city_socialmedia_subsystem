@@ -1,3 +1,6 @@
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
+
 const postSchema = new Schema(
     {
         author: {
@@ -11,7 +14,8 @@ const postSchema = new Schema(
             default: 'public'
         },
         postCaption: {
-            type: String
+            type: String,
+            trim: true // To remove leading/trailing spaces
         },
         media: [
             {
@@ -27,7 +31,6 @@ const postSchema = new Schema(
             }
         ],
         impressionsCount: {
-            // To aggregate reaction counts
             like: {
                 type: Number,
                 default: 0
@@ -59,13 +62,15 @@ const postSchema = new Schema(
         },
         impressionList: [
             {
-                // For detailed reaction tracking
                 userId: {
                     type: Schema.Types.ObjectId,
-                    ref: 'User'
+                    ref: 'User',
+                    required: true
                 },
                 impressionType: {
-                    type: String
+                    type: String,
+                    enum: ['like', 'love', 'care', 'laugh', 'sad', 'hate'],
+                    required: true
                 }
             }
         ],
@@ -87,7 +92,8 @@ const postSchema = new Schema(
         ],
         tags: [
             {
-                type: String
+                type: String,
+                trim: true
             }
         ],
         status: {
@@ -109,10 +115,12 @@ const postSchema = new Schema(
             {
                 userId: {
                     type: Schema.Types.ObjectId,
-                    ref: 'User'
+                    ref: 'User',
+                    required: true
                 },
                 reason: {
-                    type: String
+                    type: String,
+                    trim: true
                 },
                 date: {
                     type: Date,
@@ -122,7 +130,8 @@ const postSchema = new Schema(
         ],
     },
     {
-        timestamps: true
-    });
+        timestamps: true // Adds createdAt and updatedAt fields
+    }
+);
 
 module.exports = mongoose.model('Post', postSchema);
