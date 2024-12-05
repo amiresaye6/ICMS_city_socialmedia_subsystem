@@ -1,3 +1,6 @@
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
+
 const reactSchema = new Schema(
     {
         targetId: {

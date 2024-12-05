@@ -1,6 +1,12 @@
 const router = require('express').Router();
 const postsController = require("../Controllers/posts.controller");
 
+// get posts with pagination
+
+// get one post by post id
+
+// get all posts by user id
+
 // create a new post
 router.post("/addPost", postsController.createPost);
 

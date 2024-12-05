@@ -6,7 +6,8 @@ const morgan = require('morgan');           // Middleware for HTTP request loggi
 require('dotenv').config();                 // Middleware for environment variable management
 
 // import routes
-const postsRoutes = require("./Routes/posts.routes")
+const postsRoutes = require("./Routes/posts.routes");
+const commentsRoutes = require("./Routes/comments.routes");
 
 const app = express();
 
@@ -18,7 +19,8 @@ app.use(cors());                            // Enable CORS, this one for deploym
 app.use(morgan('dev'));                     // Log HTTP requests, for debugging and logging
 
 // Routes section
-app.use("/api/posts", postsRoutes)
+app.use("/api/posts", postsRoutes);
+app.use("/api/comments", commentsRoutes);
 
 
 const port = process.env.PORT || 5555;
