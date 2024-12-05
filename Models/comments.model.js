@@ -32,21 +32,26 @@ const commentSchema = new Schema(
                 ref: 'Comment'
             }] // Recursive reference for nested replies
         }],
-        impressionList: [
-            {
-                count: Number,
-                userId: {
-                    type: Schema.Types.ObjectId,
-                    ref: 'User',
-                    required: true
-                },
-                impressionType: {
-                    type: String,
-                    enum: ['like', 'love', 'care', 'laugh', 'sad', 'hate'],
-                    required: true
+        ReactsLIst: {
+            count: {
+                type: Number,
+                default: 0
+            },
+            list: [
+                {
+                    userId: {
+                        type: Schema.Types.ObjectId,
+                        ref: 'User',
+                        required: true
+                    },
+                    impressionType: {
+                        type: String,
+                        enum: ['like', 'love', 'care', 'laugh', 'sad', 'hate'],
+                        required: true
+                    }
                 }
-            }
-        ],
+            ]
+        },
     },
     {
         timestamps: true
