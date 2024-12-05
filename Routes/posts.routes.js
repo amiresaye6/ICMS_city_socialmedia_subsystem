@@ -11,6 +11,7 @@ router.put("/add-share", postsController.addToShaere);
 
 router.delete("/:hamada", postsController.delete)
 router.put('/upadeCaptio/:id', postsController.updateCaption)
+router.put('/updateavilabilty/:id', postsController.updateavilabity)
 
 
 module.exports = router;

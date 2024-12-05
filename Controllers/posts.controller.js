@@ -50,3 +50,17 @@ exports.updateCaption = async (req, res) => {
         console.error(error.message);
     }
 }
+exports.updateavilabity = async (req, res) => {
+    try {
+        const id = req.params.id
+        const updatedPost = await Post.findByIdAndUpdate(
+            id, // Document ID
+            { $set: { availability: req.body.newAvailability } }, // Update operation
+            { new: true } // Return the updated document
+        );
+        res.status(201).json(updatedPost);
+    } catch (error) {
+        console.error(error.message);
+    }
+
+}
