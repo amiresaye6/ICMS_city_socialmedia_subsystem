@@ -24,40 +24,40 @@ exports.createPost = async (req, res) => {
 
   // add Reacts logic for esraa
 exports.addReacts = async (req, res) => {
-    try {
-      const { postId, userId, reactionType } = req.body;
-  
-      // Ensure that the required data is provided
-      if (!postId || !userId || !reactionType) {
-        return res.status(400).json({ message: "Post ID, User ID, and Reaction Type are required" });
-      }
-  
-      // Find the post using the postId
-      const post = await Post.findById(postId);
-      if (!post) {
-        return res.status(404).json({ message: "Post not found" });
-      }
-  
-      // Check if the user has already reacted to this post
-      const existingReaction = post.reactions.find(react => react.userId === userId);
-      if (existingReaction) {
-        // If a reaction already exists, update the reaction
-        existingReaction.reactionType = reactionType;
-        await post.save();
-        return res.status(200).json({ message: "Reaction updated successfully", post });
-      }
-  
-      // If no previous reaction exists, add a new reaction
-      post.reactions.push({ userId, reactionType });
-      await post.save();
-  
-      res.status(200).json({ message: "Reaction added successfully", post });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Internal server error" });
+  try {
+    const { postId, userId, reactionType } = req.body;
+
+    // Ensure that the required data is provided
+    if (!postId || !userId || !reactionType) {
+      return res.status(400).json({ message: "Post ID, User ID, and Reaction Type are required" });
     }
-  };
-  
+
+    // Find the post using the postId
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Check if the user has already reacted to this post
+    const existingReaction = post.reactions.find(react => react.userId === userId);
+    if (existingReaction) {
+      // If a reaction already exists, update the reaction
+      existingReaction.reactionType = reactionType;
+      await post.save();
+      return res.status(200).json({ message: "Reaction updated successfully", post });
+    }
+
+    // If no previous reaction exists, add a new reaction
+    post.reactions.push({ userId, reactionType });
+    await post.save();
+
+    res.status(200).json({ message: "Reaction added successfully", post });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 // the logic to add new user to the share list for esraa
 exports.addToShaere = async (req, res) => {
