@@ -1,132 +1,234 @@
 const { validationResult } = require("express-validator");
 const Post = require("../Models/posts.model");
+const mongoose = require("mongoose");
 
+
+// get all posts to-do >> adding pagination to it like 10 posts each time
 exports.getPosts = (req, res) => {
-  const result = validationResult(req);
-  if (!result.isEmpty()) {
-    return res.status(400).send({ errors: result.array() });
-  }
-  res.status(200).json({
-    message: "Post retrieved successfully",
-  });
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+        return res.status(400).send({ errors: result.array() });
+    }
+    res.status(200).json({
+        message: "Post retrieved successfully",
+    });
 };
 
+// create a new post to-do >> needs some data validationa and error handling
 exports.createPost = async (req, res) => {
-  try {
-    const newPost = await Post.create(req.body);
-    res.status(201).json(newPost);
-    // res.status(201).json(newPost);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
+    try {
+        const newPost = await Post.create(req.body);
+        res.status(201).json(newPost);
+        // res.status(201).json(newPost);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
 };
 
-
-  // add Reacts logic for esraa
+// add Reacts  to-do >> fix the total calc
 exports.addReacts = async (req, res) => {
-  try {
-    const { postId, userId, reactionType } = req.body;
+    try {
+        const { postId, userId, reactionType } = req.body;
 
-    // Ensure that the required data is provided
-    if (!postId || !userId || !reactionType) {
-      return res.status(400).json({ message: "Post ID, User ID, and Reaction Type are required" });
+        // Ensure that the required data is provided
+        if (!postId || !userId || !reactionType) {
+            return res.status(400).json({ message: "Post ID, User ID, and Reaction Type are required" });
+        }
+
+        // Validate IDs
+        if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ message: "Invalid User ID or Post ID" });
+        }
+
+        // Find the post using the postId
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        // Check if the user has already reacted to this post
+        const existingReactionIndex = post.impressionList.findIndex(react =>
+            react.userId.equals(userId)
+        );
+
+        if (existingReactionIndex !== -1) {
+            const existingReaction = post.impressionList[existingReactionIndex];
+
+            if (existingReaction.impressionType === reactionType) {
+                // Remove the reaction if it's the same type
+                post.impressionList.splice(existingReactionIndex, 1);
+                post.impressionsCount[reactionType]--;
+
+                if (post.impressionsCount[reactionType] < 0) {
+                    post.impressionsCount[reactionType] = 0; // Ensure no negative values
+                }
+            } else {
+                // If it's a different reaction, update the type
+                const previousReactionType = existingReaction.impressionType;
+
+                // Decrement the count for the previous reaction type
+                post.impressionsCount[previousReactionType]--;
+                if (post.impressionsCount[previousReactionType] < 0) {
+                    post.impressionsCount[previousReactionType] = 0; // Ensure no negative values
+                }
+
+                // Update to the new reaction type
+                existingReaction.impressionType = reactionType;
+                post.impressionsCount[reactionType]++;
+            }
+        } else {
+            // If no previous reaction exists, add a new reaction
+            post.impressionList.push({ userId: new mongoose.Types.ObjectId(userId), impressionType: reactionType });
+            post.impressionsCount[reactionType]++;
+        }
+
+        // Recalculate the total impressions
+        post.impressionsCount.total = Object.values(post.impressionsCount)
+            .filter(value => typeof value === 'number' && value !== post.impressionsCount.total) // Exclude the total itself
+            .reduce((acc, curr) => acc + curr, 0);
+
+        // Save the updated post
+        await post.save();
+
+        res.status(200).json({ message: "Reaction processed successfully", post });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
     }
-
-    // Find the post using the postId
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-    // Check if the user has already reacted to this post
-    const existingReaction = post.reactions.find(react => react.userId === userId);
-    if (existingReaction) {
-      // If a reaction already exists, update the reaction
-      existingReaction.reactionType = reactionType;
-      await post.save();
-      return res.status(200).json({ message: "Reaction updated successfully", post });
-    }
-
-    // If no previous reaction exists, add a new reaction
-    post.reactions.push({ userId, reactionType });
-    await post.save();
-
-    res.status(200).json({ message: "Reaction added successfully", post });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
 };
 
 
-// the logic to add new user to the share list for esraa
-exports.addToShaere = async (req, res) => {
-  try {
-    const { postId, userId } = req.body;
+// add a share to do >> needs some enhancments
+exports.addToShare = async (req, res) => {
+    try {
+        const { postId, userId } = req.body;
 
-    if (!postId || !userId) {
-      return res
-        .status(400)
-        .json({ message: "Post ID and User ID are required" });
+        // Validate required fields
+        if (!postId || !userId) {
+            return res.status(400).json({ message: "Post ID and User ID are required" });
+        }
+
+        // Validate IDs
+        if (!mongoose.Types.ObjectId.isValid(postId) || !mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: "Invalid Post ID or User ID" });
+        }
+
+        // Find the post
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        // Check if the user has already shared the post
+        const alreadyShared = post.shareList.some((sharedUserId) => 
+            sharedUserId.equals(userId)
+        );
+
+        if (alreadyShared) {
+            // If already shared, return a message without making changes
+            return res.status(400).json({ message: "User has already shared this post" });
+        }
+
+        // Add the user to the share list and increment shareCount
+        post.shareList.push(userId);
+        post.shareCount += 1;
+
+        await post.save();
+
+        res.status(200).json({ 
+            message: "User added to the share list successfully", 
+            post 
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
     }
-
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-    const alreadyShared = post.shares.some((share) => share.userId === userId);
-    if (alreadyShared) {
-      return res
-        .status(400)
-        .json({ message: "User already added to the share list" });
-    }
-
-    post.shares.push({ userId });
-    await post.save();
-
-    res
-      .status(200)
-      .json({ message: "User added to the share list successfully", post });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
-;
+};
 
 
+// delete an existing post, to-do >> nees some error ahndling and data validation
 exports.delete = async (req, res) => {
-  // delete logic
-  const id = req.params.hamada;
-  const result = await Post.deleteOne({ _id: id });
-  res.json(result);
-  res.json({ id });
+    // delete logic
+    const id = req.params.hamada;
+    const result = await Post.deleteOne({ _id: id });
+    res.json(result);
+    res.json({ id });
+};
+// update an existing post caption to-do >> needs some error handling and data validation
+exports.updateCaption = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const updatedPost = await Post.findByIdAndUpdate(
+            id, // Document ID
+            { $set: { postCaption: req.body.newCaption } }, // Update operation
+            { new: true } // Return the updated document
+        );
+        res.status(201).json(updatedPost);
+    } catch (error) {
+        console.error(error.message);
+    }
 };
 
-exports.updateCaption = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const updatedPost = await Post.findByIdAndUpdate(
-      id, // Document ID
-      { $set: { postCaption: req.body.newCaption } }, // Update operation
-      { new: true } // Return the updated document
-    );
-    res.status(201).json(updatedPost);
-  } catch (error) {
-    console.error(error.message);
-  }
+// update an existing post caption to-do >> needs some error handling and data validation
+exports.updateAvailability = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const updatedPost = await Post.findByIdAndUpdate(
+            id, // Document ID
+            { $set: { availability: req.body.newAvailability } }, // Update operation
+            { new: true } // Return the updated document
+        );
+        res.status(201).json(updatedPost);
+    } catch (error) {
+        console.error(error.message);
+    }
 };
-exports.updateavilabity = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const updatedPost = await Post.findByIdAndUpdate(
-      id, // Document ID
-      { $set: { availability: req.body.newAvailability } }, // Update operation
-      { new: true } // Return the updated document
-    );
-    res.status(201).json(updatedPost);
-  } catch (error) {
-    console.error(error.message);
-  }
+
+
+exports.addToSave = async (req, res) => {
+    try {
+        const { postId, userId } = req.body;
+
+        // Validate required fields
+        if (!postId || !userId) {
+            return res.status(400).json({ message: "Post ID and User ID are required" });
+        }
+
+        // Validate IDs
+        if (!mongoose.Types.ObjectId.isValid(postId) || !mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: "Invalid Post ID or User ID" });
+        }
+
+        // Find the post
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        // Check if the user has already shared the post
+        const alreadyShared = post.saveList.some((sharedUserId) => 
+            sharedUserId.equals(userId)
+        );
+
+        if (alreadyShared) {
+            // If already shared, return a message without making changes
+            return res.status(400).json({ message: "User has already saved this post" });
+        }
+
+        // Add the user to the share list and increment shareCount
+        post.saveList.push(userId);
+        post.saveCount += 1;
+
+        await post.save();
+
+        res.status(200).json({ 
+            message: "User added to the save list successfully", 
+            post 
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
 };
+
+// new functions
