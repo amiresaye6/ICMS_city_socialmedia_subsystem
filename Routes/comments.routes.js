@@ -8,7 +8,7 @@ router.get('/', commentsController.getComments)
 router.post('/', commentsController.createComment)
 
 // update existing comment
-router.put('/', commentsController.updateComment)
+router.put('/:commentId', commentsController.updateComment)
 
 // add a rebly to a comment
 

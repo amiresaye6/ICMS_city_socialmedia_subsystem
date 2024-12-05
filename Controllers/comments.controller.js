@@ -62,7 +62,9 @@ module.exports.updateComment = async (req, res) => {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { commentId, content } = req.body;
+        const commentId = req.params.commentId
+
+        const { content } = req.body;
 
         // Validate IDs
         if (!mongoose.Types.ObjectId.isValid(commentId)) {
@@ -120,4 +122,3 @@ module.exports.deleteComment = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
-
