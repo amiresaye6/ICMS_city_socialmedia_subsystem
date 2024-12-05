@@ -14,10 +14,6 @@ const commentSchema = new Schema(
             type: String,
             required: true
         },
-        date: {
-            type: Date,
-            default: Date.now
-        },
         replies: [{
             userId: {
                 type: Schema.Types.ObjectId,
@@ -36,16 +32,21 @@ const commentSchema = new Schema(
                 ref: 'Comment'
             }] // Recursive reference for nested replies
         }],
-        reacts: {
-            reactsCount: {
-                type: Number,
-                default: 0
-            },
-            usersList: [{
-                type: Schema.Types.ObjectId,
-                ref: 'User'
-            }]
-        },
+        impressionList: [
+            {
+                count: Number,
+                userId: {
+                    type: Schema.Types.ObjectId,
+                    ref: 'User',
+                    required: true
+                },
+                impressionType: {
+                    type: String,
+                    enum: ['like', 'love', 'care', 'laugh', 'sad', 'hate'],
+                    required: true
+                }
+            }
+        ],
     },
     {
         timestamps: true
