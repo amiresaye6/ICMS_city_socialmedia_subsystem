@@ -185,25 +185,25 @@ exports.updateCaption = async (req, res) => {
 };
 exports.updateStatus = async (req, res) => {
   try {
-    const { id } = req.params;  // ID of the post
-    const { newStatus } = req.body;  // The new status to be updated
+    const { id } = req.params; // ID of the post
+    const { newStatus } = req.body; // The new status to be updated
 
-  
     if (!id || !newStatus) {
-      return res.status(400).json({ message: "Post ID and new status are required" });
+      return res
+        .status(400)
+        .json({ message: "Post ID and new status are required" });
     }
 
-    // make sure the new status validation 
-    const validStatuses = ['active', 'archived', 'deleted'];
+    // make sure the new status validation
+    const validStatuses = ["active", "archived", "deleted"];
     if (!validStatuses.includes(newStatus)) {
       return res.status(400).json({ message: "Invalid status value" });
     }
 
-  
     const updatedPost = await Post.findByIdAndUpdate(
       id,
-      { $set: { status: newStatus } },  //Update operation
-      { new: true }  // Return the updated document
+      { $set: { status: newStatus } }, //Update operation
+      { new: true } // Return the updated document
     );
 
     if (!updatedPost) {
@@ -216,10 +216,9 @@ exports.updateStatus = async (req, res) => {
       post: updatedPost,
     });
   } catch (error) {
-    console.error('Error while updating post status:', error.message);
+    console.error("Error while updating post status:", error.message);
   }
 };
-
 
 // update an existing post caption to-do >> needs some error handling and data validation
 exports.updateAvailability = async (req, res) => {
@@ -295,7 +294,9 @@ exports.addTag = async (req, res) => {
 
     // make sure the id and the new tag
     if (!id || !newTag) {
-      return res.status(400).json({ message: "Post ID and new tag are required" });
+      return res
+        .status(400)
+        .json({ message: "Post ID and new tag are required" });
     }
 
     // search for post
@@ -317,8 +318,10 @@ exports.addTag = async (req, res) => {
       post,
     });
   } catch (error) {
-    console.error('Error while adding tag:', error.message);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    console.error("Error while adding tag:", error.message);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 exports.updateTag = async (req, res) => {
@@ -328,7 +331,9 @@ exports.updateTag = async (req, res) => {
 
     // makesure ID ,oldTag and newTag
     if (!id || !oldTag || !newTag) {
-      return res.status(400).json({ message: "Post ID, old tag, and new tag are required" });
+      return res
+        .status(400)
+        .json({ message: "Post ID, old tag, and new tag are required" });
     }
     const post = await Post.findById(id);
 
@@ -352,8 +357,10 @@ exports.updateTag = async (req, res) => {
       post,
     });
   } catch (error) {
-    console.error('Error while updating tag:', error.message);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    console.error("Error while updating tag:", error.message);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 exports.deleteTag = async (req, res) => {
@@ -363,14 +370,18 @@ exports.deleteTag = async (req, res) => {
 
     // make sure for ID,tagToDelete
     if (!id || !tagToDelete) {
-      return res.status(400).json({ message: "Post ID and tag to delete are required" });
+      return res
+        .status(400)
+        .json({ message: "Post ID and tag to delete are required" });
     }
     const post = await Post.findById(id);
-    if (!post) {    //post existing
+    if (!post) {
+      //post existing
       return res.status(404).json({ message: "Post not found" });
     }
     const tagIndex = post.tags.indexOf(tagToDelete); //tag we want to delete
-    if (tagIndex === -1) { // make sure tag is exist
+    if (tagIndex === -1) {
+      // make sure tag is exist
       return res.status(404).json({ message: "Tag not found" });
     }
     post.tags.splice(tagIndex, 1); //delete tag
@@ -381,7 +392,7 @@ exports.deleteTag = async (req, res) => {
       post,
     });
   } catch (error) {
-    console.error('Error while deleting tag:', error.message);
+    console.error("Error while deleting tag:", error.message);
   }
 };
 
