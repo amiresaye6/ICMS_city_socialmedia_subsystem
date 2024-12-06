@@ -14,11 +14,15 @@ router.put("/addShare", postsController.addToShare);
 // delete existing comment
 
 // esraa tasks
-// add new tag
-// update existing tag
-// delete existing tag
+// add new tag   ..done
+router.put('/addTag/:id', postsController.addTag);
+router.put('/updateTag/:id', postsController.updateTag);
+router.put('/deleteTag/:id', postsController.deleteTag);
+// update existing tag   ..done
+// delete existing tag    ..done
 
-// update status  >> esraa .>> same as the endpoint of udpate caption
+// update status  >> esraa .>> same as the endpoint of udpate caption .. done
+router.put('/updateStatus/:id', postsController.updateStatus);
 
 // add new save  >> same as in addShare
 router.put("/addSave", postsController.addToSave);
