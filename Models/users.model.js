@@ -3,6 +3,11 @@ const { Schema } = mongoose;
 
 const userSchema = new Schema(
     {
+        rule: {
+            type: String,
+            enum: ['user', 'admin'],
+            default: 'user'
+        },
         name: {
             type: String,
             required: true

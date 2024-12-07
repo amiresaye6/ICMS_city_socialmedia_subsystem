@@ -1,2 +1,10 @@
 1/ where to add the files like images, videos, audios
 s3buckets >> aws
+
+[]finish the jwt auth part in both the comments routes and the psots routes
+[]finisht post routes
+[]finisht comments routes
+[]add validation to all the endpoints
+[]connect to mongoDB atlas db >> deployed remotly for better data access
+[]deploy the api in versel using hoppy account
+etc.
