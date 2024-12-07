@@ -3,14 +3,38 @@ const Post = require("../Models/posts.model");
 const mongoose = require("mongoose");
 
 // get all posts to-do >> adding pagination to it like 10 posts each time
-exports.getPosts = (req, res) => {
+exports.getAllPosts = async (req, res) => {
   const result = validationResult(req);
   if (!result.isEmpty()) {
     return res.status(400).send({ errors: result.array() });
   }
-  res.status(200).json({
-    message: "Post retrieved successfully",
-  });
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  try {
+    const posts = await Post.find().skip(skip).limit(limit);
+    const totalPosts = await Post.countDocuments();
+    const totalPages = Math.ceil(totalPosts / limit);
+
+    res.status(200).json({
+      message: "Posts retrieved successfully",
+      pagination: {
+        totalPosts,
+        totalPages,
+        currentPage: page,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      },
+      data: posts
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "An error occurred while retrieving posts",
+      error: error.message
+    });
+  }
 };
 
 // create a new post to-do >> needs some data validationa and error handling
@@ -406,17 +430,55 @@ exports.deleteTag = async (req, res) => {
 
 // new functions
 
-exports.getAllPosts = async (req, res) => {
-  res.json({ message: 'route and function not implmented yet' })
-}
-
 exports.getPostById = async (req, res) => {
-  res.json({ message: 'route and function not implmented yet' })
-}
+  const postId = req.params.postId;
+
+  try {
+    const post = await Post.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found"
+      });
+    }
+
+    res.status(200).json({
+      message: "Post retrieved successfully",
+      data: post
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "An error occurred while retrieving the post",
+      error: error.message
+    });
+  }
+};
+
 
 exports.getPostsByUserId = async (req, res) => {
-  res.json({ message: 'route and function not implmented yet' })
-}
+  const userId = req.params.userId;
+
+  try {
+    const posts = await Post.find({ author: userId });
+
+    if (!posts || posts.length === 0) {
+      return res.status(404).json({
+        message: "No posts found for this user"
+      });
+    }
+
+    res.status(200).json({
+      message: "Posts retrieved successfully",
+      data: posts
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "An error occurred while retrieving the posts",
+      error: error.message
+    });
+  }
+};
+
 
 exports.deleteShare = async (req, res) => {
   res.json({ message: 'route and function not implmented yet' })
