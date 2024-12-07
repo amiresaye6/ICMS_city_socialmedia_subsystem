@@ -25,9 +25,10 @@ exports.createPost = async (req, res) => {
 };
 
 // add Reacts  to-do >> fix the total calc
-exports.addReacts = async (req, res) => {
+exports.addReaction = async (req, res) => {
   try {
-    const { postId, userId, reactionType } = req.body;
+    const postId = req.params.postId;
+    const { userId, reactionType } = req.body;
 
     // Ensure that the required data is provided
     if (!postId || !userId || !reactionType) {
@@ -108,9 +109,10 @@ exports.addReacts = async (req, res) => {
 };
 
 // add a share to do >> needs some enhancments
-exports.addToShare = async (req, res) => {
+exports.sharePost = async (req, res) => {
   try {
-    const { postId, userId } = req.body;
+    const postId = req.params.postId;
+    const { userId } = req.body;
 
     // Validate required fields
     if (!postId || !userId) {
@@ -162,19 +164,20 @@ exports.addToShare = async (req, res) => {
 };
 
 // delete an existing post, to-do >> nees some error ahndling and data validation
-exports.delete = async (req, res) => {
+exports.deletePost = async (req, res) => {
   // delete logic
-  const id = req.params.hamada;
+  const id = req.params.postId;
   const result = await Post.deleteOne({ _id: id });
   res.json(result);
-  res.json({ id });
+  // res.json({ id });
 };
+
 // update an existing post caption to-do >> needs some error handling and data validation
 exports.updateCaption = async (req, res) => {
   try {
-    const id = req.params.id;
+    const postId = req.params.postId;
     const updatedPost = await Post.findByIdAndUpdate(
-      id, // Document ID
+      postId, // Document ID
       { $set: { postCaption: req.body.newCaption } }, // Update operation
       { new: true } // Return the updated document
     );
@@ -183,12 +186,13 @@ exports.updateCaption = async (req, res) => {
     console.error(error.message);
   }
 };
+
 exports.updateStatus = async (req, res) => {
   try {
-    const { id } = req.params; // ID of the post
+    const { postId } = req.params; // ID of the post
     const { newStatus } = req.body; // The new status to be updated
 
-    if (!id || !newStatus) {
+    if (!postId || !newStatus) {
       return res
         .status(400)
         .json({ message: "Post ID and new status are required" });
@@ -201,7 +205,7 @@ exports.updateStatus = async (req, res) => {
     }
 
     const updatedPost = await Post.findByIdAndUpdate(
-      id,
+      postId,
       { $set: { status: newStatus } }, //Update operation
       { new: true } // Return the updated document
     );
@@ -223,9 +227,9 @@ exports.updateStatus = async (req, res) => {
 // update an existing post caption to-do >> needs some error handling and data validation
 exports.updateAvailability = async (req, res) => {
   try {
-    const id = req.params.id;
+    const postId = req.params.postId;
     const updatedPost = await Post.findByIdAndUpdate(
-      id, // Document ID
+      postId, // Document ID
       { $set: { availability: req.body.newAvailability } }, // Update operation
       { new: true } // Return the updated document
     );
@@ -235,9 +239,10 @@ exports.updateAvailability = async (req, res) => {
   }
 };
 
-exports.addToSave = async (req, res) => {
+exports.savePost = async (req, res) => {
   try {
-    const { postId, userId } = req.body;
+    const { postId } = req.params;
+    const { userId } = req.body;
 
     // Validate required fields
     if (!postId || !userId) {
@@ -287,20 +292,21 @@ exports.addToSave = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 exports.addTag = async (req, res) => {
   try {
-    const { id } = req.params; // ID of the post
+    const { postId } = req.params; // ID of the post
     const { newTag } = req.body; // The new tag to be added
 
     // make sure the id and the new tag
-    if (!id || !newTag) {
+    if (!postId || !newTag) {
       return res
         .status(400)
         .json({ message: "Post ID and new tag are required" });
     }
 
     // search for post
-    const post = await Post.findById(id);
+    const post = await Post.findById(postId);
 
     // make sure the post exists
     if (!post) {
@@ -324,18 +330,19 @@ exports.addTag = async (req, res) => {
       .json({ message: "Internal server error", error: error.message });
   }
 };
+
 exports.updateTag = async (req, res) => {
   try {
-    const { id } = req.params; // ID of the post
+    const { postId } = req.params; // ID of the post
     const { oldTag, newTag } = req.body; // The old tag to be updated and the new tag value
 
     // makesure ID ,oldTag and newTag
-    if (!id || !oldTag || !newTag) {
+    if (!postId || !oldTag || !newTag) {
       return res
         .status(400)
         .json({ message: "Post ID, old tag, and new tag are required" });
     }
-    const post = await Post.findById(id);
+    const post = await Post.findById(postId);
 
     // post existing
     if (!post) {
@@ -363,18 +370,19 @@ exports.updateTag = async (req, res) => {
       .json({ message: "Internal server error", error: error.message });
   }
 };
+
 exports.deleteTag = async (req, res) => {
   try {
-    const { id } = req.params; // ID of the post
+    const { postId } = req.params; // ID of the post
     const { tagToDelete } = req.body; // The tag to be deleted
 
     // make sure for ID,tagToDelete
-    if (!id || !tagToDelete) {
+    if (!postId || !tagToDelete) {
       return res
         .status(400)
         .json({ message: "Post ID and tag to delete are required" });
     }
-    const post = await Post.findById(id);
+    const post = await Post.findById(postId);
     if (!post) {
       //post existing
       return res.status(404).json({ message: "Post not found" });
@@ -397,3 +405,19 @@ exports.deleteTag = async (req, res) => {
 };
 
 // new functions
+
+exports.getAllPosts = async (req, res) => {
+  res.json({ message: 'route and function not implmented yet' })
+}
+
+exports.getPostById = async (req, res) => {
+  res.json({ message: 'route and function not implmented yet' })
+}
+
+exports.getPostsByUserId = async (req, res) => {
+  res.json({ message: 'route and function not implmented yet' })
+}
+
+exports.deleteShare = async (req, res) => {
+  res.json({ message: 'route and function not implmented yet' })
+}

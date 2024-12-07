@@ -122,3 +122,21 @@ module.exports.deleteComment = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+module.exports.addReply = async (req, res) => {
+    try {
+        res.status(200).json({ message: "Comment updated successfully"});
+    } catch (error) {
+        console.error("Error updating comment:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+module.exports.reactToComment = async (req, res) => {
+    try {
+        res.status(200).json({ message: "Comment updated successfully"});
+    } catch (error) {
+        console.error("Error updating comment:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};

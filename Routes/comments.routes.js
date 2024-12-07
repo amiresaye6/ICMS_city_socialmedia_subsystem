@@ -1,20 +1,22 @@
 const router = require('express').Router();
 const commentsController = require("../Controllers/comments.controller");
 
-// get comments with pagination route
-router.get('/', commentsController.getComments)
+// Get comments with pagination
+router.get('/', commentsController.getComments);
 
-// add comment to a post
-router.post('/', commentsController.createComment)
+// Add a comment to a post
+router.post('/', commentsController.createComment);
 
-// update existing comment
-router.put('/:commentId', commentsController.updateComment)
+// Update an existing comment
+router.put('/:commentId', commentsController.updateComment);
 
-// add a rebly to a comment
+// Add a reply to a comment
+router.post('/:commentId/replies', commentsController.addReply);
 
-// delete existing comment
-router.delete('/:commentId', commentsController.deleteComment)
+// Delete an existing comment
+router.delete('/:commentId', commentsController.deleteComment);
 
-// react to a comment
+// React to a comment
+router.post('/:commentId/reactions', commentsController.reactToComment);
 
 module.exports = router;

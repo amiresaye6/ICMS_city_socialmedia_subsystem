@@ -1,46 +1,64 @@
 const router = require('express').Router();
-const postsController = require("../Controllers/posts.controller");
+const postsController = require('../Controllers/posts.controller');
 
-// get posts with pagination
+//  **POST ROUTES**
 
-// get one post by post id
+// Get all posts (with optional pagination)
+router.get('/', postsController.getAllPosts);
 
-// get all posts by user id
+// Get a specific post by postId
+router.get('/:postId', postsController.getPostById);
 
-// create a new post
-router.post("/addPost", postsController.createPost);
+// Get all posts created by a specific user
+router.get('/user/:userId', postsController.getPostsByUserId);
 
-// add a new reaction
-router.put("/addReact", postsController.addReacts);
-router.put("/addShare", postsController.addToShare);
+// Create a new post
+router.post('/', postsController.createPost);
 
-// amir tasks
-// add new comment
-// update existing comment
-// delete existing comment
+// Delete a specific post
+router.delete('/:postId', postsController.deletePost);
 
-// esraa tasks
-// add new tag   ..done
-router.put('/addTag/:id', postsController.addTag);
-router.put('/updateTag/:id', postsController.updateTag);
-router.put('/deleteTag/:id', postsController.deleteTag);
-// update existing tag   ..done
-// delete existing tag    ..done
+//  **REACTIONS ROUTES**
 
-// update status  >> esraa .>> same as the endpoint of udpate caption .. done
-router.put('/updateStatus/:id', postsController.updateStatus);
+// Add a new reaction to a post
+router.post('/:postId/reactions', postsController.addReaction);
 
-// add new save  >> same as in addShare
-router.put("/addSave", postsController.addToSave);
+//  **SHARE ROUTES**
 
-// amir tasks
-// add new flag
-// update existing flag
-// delete existing flag
+// Share a post
+router.post('/:postId/shares', postsController.sharePost);
 
-router.delete("/:hamada", postsController.delete)
-router.put('/upadeCaptio/:id', postsController.updateCaption)
-router.put('/updateAvailability/:id', postsController.updateAvailability)
+// Delete a share (optional)
+router.delete('/:postId/shares', postsController.deleteShare);
 
+//  **TAG ROUTES**
+
+// Add a new tag to a post
+router.post('/:postId/tags', postsController.addTag);
+
+// Update an existing tag on a post
+router.put('/:postId/tags', postsController.updateTag);
+
+// Delete a tag from a post
+router.delete('/:postId/tags', postsController.deleteTag);
+
+//  **SAVE ROUTES**
+
+// Save a post (similar to a bookmark or "favorite" feature)
+//===============>> needs some updates to unsave too.
+router.post('/:postId/saves', postsController.savePost);
+
+//  **STATUS & AVAILABILITY ROUTES**
+
+// Update the status of a post (e.g., published, draft, etc.)
+router.put('/:postId/status', postsController.updateStatus);
+
+// Update the availability of a post (e.g., visible/hidden)
+router.put('/:postId/availability', postsController.updateAvailability);
+
+//  **CAPTION ROUTE**
+
+// Update the caption of a post
+router.put('/:postId/caption', postsController.updateCaption);
 
 module.exports = router;
