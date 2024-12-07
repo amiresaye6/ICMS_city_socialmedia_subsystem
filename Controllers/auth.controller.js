@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../Models/users.model");
+const Token = require("../Models/tokens.model");
 
 module.exports.login = async (req, res) => {
     try {
@@ -33,6 +34,9 @@ module.exports.login = async (req, res) => {
             { expiresIn: "1h" } // Token expiration time
         );
 
+        // Store the token in the database
+        await Token.create({ token, userId: user._id });
+
         // Respond with the token and user info
         res.status(200).json({
             message: "Login successful",
@@ -48,6 +52,7 @@ module.exports.login = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
 
 module.exports.signup = async (req, res) => {
     try {
@@ -74,7 +79,7 @@ module.exports.signup = async (req, res) => {
             password: hashedPassword,
         });
 
-        // Respond with token and user info
+        // Respond with user info (no token needed here)
         res.status(201).json({
             message: "User created successfully",
             user: {
@@ -85,6 +90,29 @@ module.exports.signup = async (req, res) => {
         });
     } catch (error) {
         console.error("Error during signup:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+module.exports.logout = async (req, res) => {
+    try {
+        // Extract the token from headers (it should be "Bearer <token>")
+        const token = req.headers.authorization?.split(' ')[1];
+
+        if (!token) {
+            return res.status(400).json({ message: "No token provided" });
+        }
+
+        // Remove the token from the database
+        const deletedToken = await Token.findOneAndDelete({ token });
+
+        if (!deletedToken) {
+            return res.status(400).json({ message: "Token not found or already logged out" });
+        }
+
+        res.status(200).json({ message: "Logout successful" });
+    } catch (error) {
+        console.error("Error during logout:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
