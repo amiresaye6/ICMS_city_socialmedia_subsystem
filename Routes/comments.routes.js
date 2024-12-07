@@ -1,22 +1,25 @@
 const router = require('express').Router();
 const commentsController = require("../Controllers/comments.controller");
+const authMiddleware = require("../Middlewares/auth.middleware");
 
 // Get comments with pagination
 router.get('/', commentsController.getComments);
 
 // Add a comment to a post
-router.post('/', commentsController.createComment);
+router.post('/', authMiddleware.authenticate, commentsController.createComment);
 
 // Update an existing comment
-router.put('/:commentId', commentsController.updateComment);
+router.put('/:commentId', authMiddleware.authenticate, commentsController.updateComment);
 
 // Add a reply to a comment
-router.post('/:commentId/replies', commentsController.addReply);
+// ==========>> not implmented yet
+router.post('/:commentId/replies', authMiddleware.authenticate, commentsController.addReply);
 
 // Delete an existing comment
-router.delete('/:commentId', commentsController.deleteComment);
+router.delete('/:commentId', authMiddleware.authenticate, commentsController.deleteComment);
 
 // React to a comment
-router.post('/:commentId/reactions', commentsController.reactToComment);
+// ==========>> not implmented yet
+router.post('/:commentId/reactions', authMiddleware.authenticate, commentsController.reactToComment);
 
 module.exports = router;

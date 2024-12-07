@@ -8,7 +8,7 @@ const userSchema = new Schema(
             enum: ['user', 'admin'],
             default: 'user'
         },
-        name: {
+        userName: {
             type: String,
             required: true
         },
@@ -51,6 +51,12 @@ const userSchema = new Schema(
                 ref: 'Post'
             }
         ], // Saved/bookmarked posts
+        sharedPosts: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Post'
+            }
+        ], // Shared posts
     },
     {
         timestamps: true

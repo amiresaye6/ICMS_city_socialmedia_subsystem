@@ -1,6 +1,6 @@
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const User = require("../models/user.model");
+const User = require("../Models/users.model");
 
 module.exports.login = async (req, res) => {
     try {
@@ -41,11 +41,50 @@ module.exports.login = async (req, res) => {
                 id: user._id,
                 userName: user.userName,
                 email: user.email,
-                role: user.role,
             },
         });
     } catch (error) {
         console.error("Error during login:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+module.exports.signup = async (req, res) => {
+    try {
+        const { userName, email, password } = req.body;
+
+        // Validate input
+        if (!userName || !email || !password) {
+            return res.status(400).json({ message: "Username, email, and password are required" });
+        }
+
+        // Check if the email is already in use
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(409).json({ message: "Email is already in use" });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create new user
+        const newUser = await User.create({
+            userName,
+            email,
+            password: hashedPassword,
+        });
+
+        // Respond with token and user info
+        res.status(201).json({
+            message: "User created successfully",
+            user: {
+                id: newUser._id,
+                userName: newUser.userName,
+                email: newUser.email,
+            },
+        });
+    } catch (error) {
+        console.error("Error during signup:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };

@@ -8,6 +8,7 @@ require('dotenv').config();                 // Middleware for environment variab
 // import routes
 const postsRoutes = require("./Routes/posts.routes");
 const commentsRoutes = require("./Routes/comments.routes");
+const authRoutes = require("./Routes/auth.routes");
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(morgan('dev'));                     // Log HTTP requests, for debugging 
 // Routes section
 app.use("/api/posts", postsRoutes);
 app.use("/api/comments", commentsRoutes);
+app.use("/api/auth", authRoutes);
 
 
 const port = process.env.PORT || 5555;

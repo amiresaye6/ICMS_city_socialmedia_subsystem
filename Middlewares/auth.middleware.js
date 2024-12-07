@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
-const Post = require("..//Models/posts.model");
-const Comment = require("../Models/comments.model");
+const Post = require("../Models/posts.model");
+// const Comment = require("../Models/comments.model");
 
 // Secret for JWT
 const JWT_SECRET = process.env.JWT_SECRET || "temp_jwt_secret_until_you_add_one_to_the_dot_env_file";
