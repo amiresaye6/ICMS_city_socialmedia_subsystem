@@ -19,6 +19,28 @@ module.exports.getComments = async (req, res) => {
     }
 };
 
+module.exports.getCommentsByPostId = async (req, res) => {
+    try {
+        // Fetch all comments
+        const postId = req.params.postId;
+
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ message: "Invalid Post ID" });
+        }
+
+        const comments = await Comment.find({postId});
+
+        if (!comments.length) {
+            return res.status(404).json({ message: "No comments found" });
+        }
+
+        res.status(200).json(comments);
+    } catch (error) {
+        console.error("Error fetching comments:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 module.exports.createComment = async (req, res) => {
     try {
         // Validate request body using express-validator
@@ -27,11 +49,11 @@ module.exports.createComment = async (req, res) => {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { postId, userId, content } = req.body;
+        const { postId, content } = req.body;
 
         // Validate IDs
-        if (!mongoose.Types.ObjectId.isValid(postId) || !mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({ message: "Invalid Post ID or User ID" });
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).json({ message: "Invalid Post ID" });
         }
 
         // Find the post and add the comment ID
@@ -41,7 +63,7 @@ module.exports.createComment = async (req, res) => {
         }
 
         // Create the comment
-        const response = await Comment.create({ postId, userId, content });
+        const response = await Comment.create({ postId, userId: req.user.userId, content });
 
         post.comments.push(response._id);
         await post.save(); // Save the updated post

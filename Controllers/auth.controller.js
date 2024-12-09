@@ -31,7 +31,7 @@ module.exports.login = async (req, res) => {
                 role: user.role, // Assuming `role` is a field in the User model (e.g., 'user', 'admin')
             },
             process.env.JWT_SECRET, // Your JWT secret from environment variables
-            { expiresIn: "1h" } // Token expiration time
+            { expiresIn: "15m" } // Token expiration time
         );
 
         // Store the token in the database

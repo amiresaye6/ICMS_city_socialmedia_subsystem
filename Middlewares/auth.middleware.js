@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const Post = require("../Models/posts.model");
-// const Comment = require("../Models/comments.model");
+const Comment = require("../Models/comments.model");
 
 // Secret for JWT
 const JWT_SECRET = process.env.JWT_SECRET || "temp_jwt_secret_until_you_add_one_to_the_dot_env_file";
@@ -47,6 +47,27 @@ exports.isPostCreator = async (req, res, next) => {
 
         // Attach the post to the request for further use
         req.post = post;
+        next();
+    } catch (error) {
+        console.error("Error checking creator:", error.message);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+exports.isCommentCreator = async (req, res, next) => {
+    const { commentId } = req.params;
+
+    try {
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return res.status(404).json({ message: "Comment not found" });
+        }
+
+        if (comment.userId.toString() !== req.user.userId) {
+            return res.status(403).json({ message: "Access denied: Not the creator of this comment" });
+        }
+
+        // Attach the post to the request for further use
+        // req.post = post;
         next();
     } catch (error) {
         console.error("Error checking creator:", error.message);
