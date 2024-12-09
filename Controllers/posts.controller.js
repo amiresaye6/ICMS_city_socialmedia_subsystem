@@ -40,12 +40,80 @@ exports.getAllPosts = async (req, res) => {
 // create a new post to-do >> needs some data validationa and error handling
 exports.createPost = async (req, res) => {
   try {
-    const newPost = await Post.create(req.body);
+    // Check for Required Fields
+    const { postCaption } = req.body;
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        error: 'At least one media file is required'
+      });
+    }
+
+    // Extract and Validate Media Information
+    const media = req.files.map(file => {
+      const type = getMediaType(file.mimetype);
+
+      // Validate the type according to the media schema enum
+      if (!['image', 'video', 'audio'].includes(type)) {
+        throw new Error(`Invalid media type detected: ${type}`);
+      }
+
+      return {
+        type,
+        url: `/public/uploads/${file.filename}`
+      };
+    });
+
+    // Prepare Post Data
+    const newPostData = {
+      postCaption: postCaption.trim(), // Trim to remove extra spaces
+      author: req.user?.userId, // Ensure the user is authenticated
+      media
+    };
+
+    if (!newPostData.author) {
+      return res.status(401).json({
+        error: 'Unauthorized: User not authenticated'
+      });
+    }
+
+    // Create and Save the New Post
+    const newPost = await Post.create(newPostData);
     res.status(201).json(newPost);
-    // res.status(201).json(newPost);
+
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    // Error Handling
+    if (error.name === 'ValidationError') {
+      // Handle Mongoose validation errors
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        error: 'Validation error',
+        details: errors
+      });
+    }
+
+    if (error.name === 'MulterError') {
+      // Handle file upload errors from Multer
+      return res.status(400).json({
+        error: 'File upload error',
+        details: error.message
+      });
+    }
+
+    // Handle all other errors
+    res.status(500).json({
+      error: 'An unexpected error occurred while creating the post',
+      details: error.message
+    });
   }
+};
+
+// Helper function to determine the media type
+const getMediaType = (mimeType) => {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('audio/')) return 'audio';
+  return 'unknown';
 };
 
 // add Reacts  to-do >> fix the total calc

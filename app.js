@@ -15,7 +15,7 @@ const app = express();
 // Middleware section
 app.use(express.json());                    // Parse incoming JSON payloads
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded payloads >>> allow using req.body
-app.use(express.static('Public'));          // Serve static files from the 'Public' directory
+app.use('/public/uploads', express.static('Public/uploads'));          // Serve static files from the 'Public' directory
 app.use(cors());                            // Enable CORS, this one for deployment reasons to access the api from any ware.
 app.use(morgan('dev'));                     // Log HTTP requests, for debugging and logging
 
