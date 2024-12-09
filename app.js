@@ -26,9 +26,10 @@ app.use("/api/auth", authRoutes);
 
 
 const port = process.env.PORT || 5555;
+const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING || "mongodb://127.0.0.1:27017/Socialmedia"
 
 // Connect to MongoDB on Socialmedia database
-mongoose.connect('mongodb://127.0.0.1:27017/Socialmedia')
+mongoose.connect(MONGODB_CONNECTION_STRING)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('Failed to connect to MongoDB', err));
 
