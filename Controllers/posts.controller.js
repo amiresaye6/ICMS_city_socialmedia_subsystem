@@ -70,7 +70,7 @@ exports.createPost = async (req, res) => {
       // Use the correct file URL, remove "/public" from the path
       return {
         type,
-        url: `/uploads/${file.filename}`
+        url: `/public/uploads/${file.filename}` // to be able to send req directly to it.
       };
     });
 
