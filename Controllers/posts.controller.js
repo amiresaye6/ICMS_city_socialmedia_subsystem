@@ -129,8 +129,13 @@ const getMediaType = (mimetype) => {
 // add Reacts  to-do >> fix the total calc
 exports.addReaction = async (req, res) => {
   try {
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+      return res.status(400).send({ errors: result.array() });
+    }
     const postId = req.params.postId;
-    const { userId, reactionType } = req.body;
+    const userId = req.user.userId;
+    const { reactionType } = req.body;
 
     // Ensure that the required data is provided
     if (!postId || !userId || !reactionType) {
@@ -193,12 +198,12 @@ exports.addReaction = async (req, res) => {
     }
 
     // Recalculate the total impressions
-    post.impressionsCount.total = Object.values(post.impressionsCount)
-      .filter(
-        (value) =>
-          typeof value === "number" && value !== post.impressionsCount.total
-      ) // Exclude the total itself
-      .reduce((acc, curr) => acc + curr, 0);
+    // post.impressionsCount.total = Object.values(post.impressionsCount)
+    //   .filter(
+    //     (value) =>
+    //       typeof value === "number" && value !== post.impressionsCount.total
+    //   ) // Exclude the total itself
+    //   .reduce((acc, curr) => acc + curr, 0);
 
     // Save the updated post
     await post.save();
@@ -214,7 +219,7 @@ exports.addReaction = async (req, res) => {
 exports.sharePost = async (req, res) => {
   try {
     const postId = req.params.postId;
-    const { userId } = req.body;
+    const { userId } = req.user;
 
     // Validate required fields
     if (!postId || !userId) {
@@ -344,7 +349,7 @@ exports.updateAvailability = async (req, res) => {
 exports.savePost = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { userId } = req.body;
+    const { userId } = req.user;
 
     // Validate required fields
     if (!postId || !userId) {

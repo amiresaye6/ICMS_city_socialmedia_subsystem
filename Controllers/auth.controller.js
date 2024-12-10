@@ -2,9 +2,15 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../Models/users.model");
 const Token = require("../Models/tokens.model");
+const { validationResult } = require("express-validator")
 
 module.exports.login = async (req, res) => {
     try {
+        const result = validationResult(req);
+        if (!result.isEmpty()) {
+            return res.status(400).send({ errors: result.array() });
+        }
+
         const { email, password } = req.body;
 
         // Validate input
@@ -56,12 +62,17 @@ module.exports.login = async (req, res) => {
 
 module.exports.signup = async (req, res) => {
     try {
+        const result = validationResult(req);
+        if (!result.isEmpty()) {
+            return res.status(400).send({ errors: result.array() });
+        }
+
         const { userName, email, password } = req.body;
 
         // Validate input
-        if (!userName || !email || !password) {
-            return res.status(400).json({ message: "Username, email, and password are required" });
-        }
+        // if (!userName || !email || !password) {
+        //     return res.status(400).json({ message: "Username, email, and password are required" });
+        // }
 
         // Check if the email is already in use
         const existingUser = await User.findOne({ email });

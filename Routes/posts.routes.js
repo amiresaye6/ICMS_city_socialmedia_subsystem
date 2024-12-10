@@ -1,20 +1,25 @@
 const router = require('express').Router();
 const postsController = require('../Controllers/posts.controller');
 const authMiddleware = require("../Middlewares/auth.middleware");
-const upload = require("../Middlewares/fileUpload.middleware")
+const upload = require("../Middlewares/fileUpload.middleware");
+const postsValidator = require("../Validator/posts.validator");
 //  **POST ROUTES**
 
 // Get all posts (with optional pagination)
-router.get('/', postsController.getAllPosts);
+router.get('/', authMiddleware.authenticate, postsController.getAllPosts);
 
 // Get a specific post by postId
-router.get('/:postId', postsController.getPostById);
+router.get('/:postId', authMiddleware.authenticate, postsController.getPostById);
 
 // Get all posts created by a specific user
-router.get('/user/:userId', postsController.getPostsByUserId);
+router.get('/user/:userId', authMiddleware.authenticate, postsController.getPostsByUserId);
 
 // Create a new post
-router.post('/', authMiddleware.authenticate, upload.array('media', 5), postsController.createPost);
+router.post('/',
+    authMiddleware.authenticate,
+    upload.array('media', 5),
+    postsValidator.validateCreatePost,
+    postsController.createPost);
 
 // Delete a specific post
 router.delete('/:postId', postsController.deletePost);
@@ -22,25 +27,28 @@ router.delete('/:postId', postsController.deletePost);
 //  **REACTIONS ROUTES**
 
 // Add a new reaction to a post
-router.post('/:postId/reactions', authMiddleware.authenticate, postsController.addReaction);
+router.post('/:postId/reactions',
+    authMiddleware.authenticate,
+    postsValidator.valildateAddReaction,
+    postsController.addReaction);
 
 //  **SHARE ROUTES**
 
 // Share a post
 router.post('/:postId/shares', authMiddleware.authenticate, postsController.sharePost);
 
-// Delete a share (optional)
+// Delete a share (optional) // need implementation
 router.delete('/:postId/shares', authMiddleware.authenticate, postsController.deleteShare);
 
 //  **TAG ROUTES**
 
-// Add a new tag to a post
+// Add a new tag to a post // esraa validation
 router.post('/:postId/tags', authMiddleware.authenticate, postsController.addTag);
 
-// Update an existing tag on a post
+// Update an existing tag on a post // esraa validation
 router.put('/:postId/tags', authMiddleware.authenticate, postsController.updateTag);
 
-// Delete a tag from a post
+// Delete a tag from a post // esraa validation
 router.delete('/:postId/tags', authMiddleware.authenticate, postsController.deleteTag);
 
 //  **SAVE ROUTES**
@@ -51,15 +59,15 @@ router.post('/:postId/saves', authMiddleware.authenticate, postsController.saveP
 
 //  **STATUS & AVAILABILITY ROUTES**
 
-// Update the status of a post (e.g., published, draft, etc.)
+// Update the status of a post (e.g., published, draft, etc.) // esraa validation
 router.put('/:postId/status', authMiddleware.authenticate, postsController.updateStatus);
 
-// Update the availability of a post (e.g., visible/hidden)
+// Update the availability of a post (e.g., visible/hidden) // esraa validation
 router.put('/:postId/availability', authMiddleware.authenticate, postsController.updateAvailability);
 
 //  **CAPTION ROUTE**
 
-// Update the caption of a post
+// Update the caption of a post // esraa validation
 router.put('/:postId/caption', authMiddleware.authenticate, postsController.updateCaption);
 
 module.exports = router;
