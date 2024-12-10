@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const cors = require('cors');               // Middleware for Cross-Origin Resource Sharing
 const morgan = require('morgan');           // Middleware for HTTP request logging
 // const { check, validationResult } = require('express-validator'); // Middleware for request validation
+const path = require('path');
 require('dotenv').config();                 // Middleware for environment variable management
 
 // import routes
@@ -15,7 +16,7 @@ const app = express();
 // Middleware section
 app.use(express.json());                    // Parse incoming JSON payloads
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded payloads >>> allow using req.body
-app.use('/public/uploads', express.static('Public/uploads'));          // Serve static files from the 'Public' directory
+app.use('/public/uploads', express.static(path.join(__dirname, 'public/uploads')));          // Serve static files from the 'Public' directory
 app.use(cors());                            // Enable CORS, this one for deployment reasons to access the api from any ware.
 app.use(morgan('dev'));                     // Log HTTP requests, for debugging and logging
 

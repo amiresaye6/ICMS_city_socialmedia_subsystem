@@ -43,6 +43,14 @@ exports.createPost = async (req, res) => {
     // Check for Required Fields
     const { postCaption } = req.body;
 
+    // Validate Post Caption
+    if (!postCaption || postCaption.trim() === '') {
+      return res.status(400).json({
+        error: 'Post caption is required'
+      });
+    }
+
+    // Validate Uploaded Media
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         error: 'At least one media file is required'
@@ -51,6 +59,7 @@ exports.createPost = async (req, res) => {
 
     // Extract and Validate Media Information
     const media = req.files.map(file => {
+      // Determine the media type (image, video, audio) from mimetype
       const type = getMediaType(file.mimetype);
 
       // Validate the type according to the media schema enum
@@ -58,33 +67,34 @@ exports.createPost = async (req, res) => {
         throw new Error(`Invalid media type detected: ${type}`);
       }
 
+      // Use the correct file URL, remove "/public" from the path
       return {
         type,
-        url: `/public/uploads/${file.filename}`
+        url: `/uploads/${file.filename}`
       };
     });
 
-    // Prepare Post Data
-    const newPostData = {
-      postCaption: postCaption.trim(), // Trim to remove extra spaces
-      author: req.user?.userId, // Ensure the user is authenticated
-      media
-    };
-
-    if (!newPostData.author) {
+    // Check if the user is authenticated
+    if (!req.user || !req.user.userId) {
       return res.status(401).json({
         error: 'Unauthorized: User not authenticated'
       });
     }
 
-    // Create and Save the New Post
+    // Prepare Post Data
+    const newPostData = {
+      postCaption: postCaption.trim(), // Remove extra spaces
+      author: req.user.userId, // Ensure the user is authenticated
+      media
+    };
+
+    // Create and Save the New Post in MongoDB
     const newPost = await Post.create(newPostData);
     res.status(201).json(newPost);
 
   } catch (error) {
-    // Error Handling
+    // Handle Validation Errors (like Mongoose validation errors)
     if (error.name === 'ValidationError') {
-      // Handle Mongoose validation errors
       const errors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
         error: 'Validation error',
@@ -92,15 +102,15 @@ exports.createPost = async (req, res) => {
       });
     }
 
+    // Handle Multer File Upload Errors
     if (error.name === 'MulterError') {
-      // Handle file upload errors from Multer
       return res.status(400).json({
         error: 'File upload error',
         details: error.message
       });
     }
 
-    // Handle all other errors
+    // Handle All Other Errors
     res.status(500).json({
       error: 'An unexpected error occurred while creating the post',
       details: error.message
@@ -108,12 +118,12 @@ exports.createPost = async (req, res) => {
   }
 };
 
-// Helper function to determine the media type
-const getMediaType = (mimeType) => {
-  if (mimeType.startsWith('image/')) return 'image';
-  if (mimeType.startsWith('video/')) return 'video';
-  if (mimeType.startsWith('audio/')) return 'audio';
-  return 'unknown';
+// Utility Function to Get Media Type Based on MIME Type
+const getMediaType = (mimetype) => {
+  if (mimetype.startsWith('image/')) return 'image';
+  if (mimetype.startsWith('video/')) return 'video';
+  if (mimetype.startsWith('audio/')) return 'audio';
+  return null; // If the type is not recognized
 };
 
 // add Reacts  to-do >> fix the total calc
