@@ -120,6 +120,7 @@ router.put(
 router.put(
   "/:postId/caption",
   authMiddleware.authenticate,
+  postsValidator.validateUpdateCaption,
   postsController.updateCaption
 );
 
