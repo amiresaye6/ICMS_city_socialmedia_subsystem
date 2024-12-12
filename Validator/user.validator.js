@@ -31,4 +31,5 @@ exports.signupValidator = [
         .withMessage("Password is required")
         .isLength({ min: 8, max: 16 })
         .withMessage("Password must be at least 8 characters"),
-];
+]; 
+
