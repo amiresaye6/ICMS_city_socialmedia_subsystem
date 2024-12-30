@@ -23,51 +23,7 @@ The **City Social Media Platform** is a key subsystem of the **Integrated City M
 - **Middleware**: Redux (for state management)
 - **Styling**: CSS, Responsive Design
 
-## Project Structure
-```plaintext
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── components/                # UI Components
-│   │   │   ├── Header.component.js     # Header component
-│   │   │   ├── Footer.component.js     # Footer component
-│   │   │   └── PostCard.component.js   # Post card component
-│   │   ├── pages/                     # Application pages (Home, Alerts, etc.)
-│   │   │   ├── Home.page.js           # Home page
-│   │   │   ├── Alerts.page.js         # Alerts page
-│   │   │   └── Profile.page.js        # User profile page
-│   │   ├── services/                  # API services
-│   │   │   ├── user.service.js         # User API service
-│   │   │   ├── post.service.js         # Post API service
-│   │   │   └── alert.service.js        # Alert API service
-│   │   └── store/                     # Redux store and slices
-│   │       ├── store.js                # Store configuration
-│   │       ├── userSlice.js            # User slice
-│   │       └── postSlice.js            # Post slice
-│   ├── .env                            # Environment variables for frontend
-│   ├── .gitignore                      # Git ignore file for frontend
-│   └── package.json                    # Frontend dependencies and scripts
-├── backend/
-│   ├── models/                        # MongoDB schema definitions
-│   │   ├── User.model.js              # User schema
-│   │   ├── Post.model.js              # Post schema
-│   │   └── Comment.model.js           # Comment schema
-│   ├── routes/                        # API routes
-│   │   ├── users.routes.js            # User routes
-│   │   ├── posts.routes.js            # Post routes
-│   │   └── alerts.routes.js           # Alert routes
-│   ├── controllers/                   # Request handlers
-│   │   ├── user.controller.js          # User request handlers
-│   │   ├── post.controller.js          # Post request handlers
-│   │   └── alert.controller.js         # Alert request handlers
-│   ├── middleware/                    # Authorization, authentication, etc.
-│   │   ├── auth.middleware.js          # Authentication middleware
-│   │   └── error.middleware.js         # Error handling middleware
-│   ├── .env                            # Environment variables for backend
-│   ├── .gitignore                      # Git ignore file for backend
-│   └── server.js                       # Main server file
-└── README.md
-```
+
 
 ## Getting Started
 
@@ -87,16 +43,11 @@ The **City Social Media Platform** is a key subsystem of the **Integrated City M
 2. **Install Dependencies**
    ```bash
    # Install backend dependencies
-   cd backend
-   npm install
-
-   # Install frontend dependencies
-   cd ../frontend
    npm install
    ```
 
 3. **Environment Variables**
-   Create a `.env` file in the `backend` directory and add your MongoDB connection string and other secrets:
+   Create a `.env` file and add your MongoDB connection string and other secrets:
    ```plaintext
    MONGO_URI=<Your MongoDB URI>
    PORT=4000
@@ -110,11 +61,6 @@ The **City Social Media Platform** is a key subsystem of the **Integrated City M
    npm run dev
    ```
 
-2. **Start Frontend Development Server**
-   ```bash
-   cd frontend
-   npm start
-   ```
 
 ## API Documentation
 API endpoints allow CRUD operations for posts, alerts, tagging, and notifications. Refer to the [API Documentation](link-to-documentation) for details on routes and usage.
@@ -125,10 +71,10 @@ API endpoints allow CRUD operations for posts, alerts, tagging, and notification
 - **Phase 3**: Testing and Documentation
 
 ## Contributing
-Contributions are welcome. Please read our [Contribution Guidelines](link-to-guidelines) for more details on our development process.
+I want you to know that contributions are welcome.
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. Please take a look at the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
-Special thanks to our team and mentors at [University/Organization Name] for their guidance and support.
+Thanks to our team and mentors at [University/Organization Name] for their guidance and support.
