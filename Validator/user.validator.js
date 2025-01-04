@@ -4,7 +4,7 @@ exports.registerValidation = [
     body("userName")
         .notEmpty()
         .withMessage("Username is required")
-        .isLength({ min: 3, max: 12 })
+        .isLength({ min: 3, max: 50 })
         .withMessage("Username must be at least 3 characters"),
 
     body("email")
@@ -16,7 +16,7 @@ exports.registerValidation = [
     body("password")
         .notEmpty()
         .withMessage("Password is required")
-        .isLength({ min: 8, max: 16 })
+        .isLength({ min: 8, max: 50 })
         .withMessage("Password must be at least 8 characters"),
 ];
 exports.signupValidator = [
@@ -29,7 +29,6 @@ exports.signupValidator = [
     body("password")
         .notEmpty()
         .withMessage("Password is required")
-        .isLength({ min: 8, max: 16 })
+        .isLength({ min: 8, max: 50 })
         .withMessage("Password must be at least 8 characters"),
 ]; 
-
