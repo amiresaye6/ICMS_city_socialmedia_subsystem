@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../Models/users.model");
 const Token = require("../Models/tokens.model");
 const { validationResult } = require("express-validator")
+const mailer = require("../Middlewares/emailSender.middleware");
 
 module.exports.login = async (req, res) => {
     try {
@@ -53,6 +54,28 @@ module.exports.login = async (req, res) => {
                 email: user.email,
             },
         });
+
+        // Send login notification email (non-blocking)
+        const emailSubject = "Login Notification - ICMS";
+        const emailText = `
+            Dear ${user.userName || "User"},
+
+            This email is to inform you that a login attempt was made to your ICMS account.
+
+            Details:
+            - Email: ${email}
+            - Time: ${new Date().toLocaleString()}
+
+            If this was you, no further action is required. If this was not you, please contact our support team immediately.
+
+            Best regards,
+            The ICMS Team
+        `;
+
+        mailer.sendEmail(email, emailSubject, emailText)
+            // .then(() => console.log("Login notification email sent successfully"))
+            .catch((error) => console.error("Failed to send login notification email:", error));
+
     } catch (error) {
         console.error("Error during login:", error);
         res.status(500).json({ message: "Internal server error" });
