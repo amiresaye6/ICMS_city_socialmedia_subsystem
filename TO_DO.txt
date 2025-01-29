@@ -1,10 +1,201 @@
-1/ where to add the files like images, videos, audios
-s3buckets >> aws
+1/ where to add the files like images, videos, audios in something like S3 buckets >> aws
 
-[]finish the jwt auth part in both the comments routes and the psots routes
-[]finisht post routes
-[]finisht comments routes
-[]add validation to all the endpoints
-[]connect to mongoDB atlas db >> deployed remotly for better data access
-[]deploy the api in versel using hoppy account
-etc.
+2/ central user api, we only need the login endpoint of it, no need for
+regestering from social media
+https://cms-central-ffb6acaub5afeecj.uaenorth-01.azurewebsites.net/swagger/index.html
+
+3/ system design diagram
+https://excalidraw.com/#json=0hM4g85eIJ8J3z0XIWmc0,EgWZpkic1fXErExkw3AzCA
+
+
+stuff need thinking
+- if the user share a post, userId will be added to the post's share list.
+but how it will be reposted or added to the users account,
+first solution is to create a list for shared in the users account object, for each action it takes like sharing posts, adding reacts,
+and maybe comments too can be added to this list.
+the frow will be like so, user press share to a post, user id will be added to the share list in the post object,
+postId will be added to the user account object in a share list too, then it will be treated like a regular post in the users account feed,
+and can be reposted in the public feed.
+
+
+- adding tags and handling it, this must be availabel only to the service providers subSystem, i need to add some endpoints for handing this part
+some use cases for this stuff, it will be merged in a post endpint to create special posts , so all posts will have this properity but it will be
+regural for all of them except posts from the service provider which will require to specify the tag at creation of the post.
+
+
+- implment deleting a shared post functionality, so it will require two requists for now, one to delete the user id from the shared list in the poset
+that is being shared, teh second is to delete the postId from the users account object, then it will be automatically removed from the feed
+
+
+- in the delete post route, i need to modify the response for redability,
+current response for deleting an unexisting post
+{
+    "acknowledged": true,
+    "deletedCount": 0
+}
+
+need to be something like that for failur
+{
+    "message": "post not found, please inter valid post id",
+}
+need to be something like that for success
+{
+    "messaeg": "post deleted successfuly",
+}
+
+
+- get comments with pagination endpoint doesnt serve any purpose, need to be removed or add some usefull functioniality to it
+
+- add functionality to react to a comment end point, and the add a reply to a comment end point, both do nothing right now
+
+- fix the respoisen in the deleting a comment, it returns the delted comment in the resopoisne, this need to be changed to some proper respoisne
+
+
+- need to thing of the strategy that will be followed to server posts in both the feeds, the reports feed and the public feed, firts thought is to
+use pagination fo some sort like sending 10 posts by requist of each user, but here we need to thing of the index of them, should we use
+random ordering in the pubilc and from newset to oldest in the reports feed (this is a priority queue i think), or use the date in both of them.
+
+- need to thing of i would add the ability to add friends and remove them and things like that which will open the gate twards the chating app part
+of my system, this step i need to keep it for now, it will be at stage 2.
+
+======================================================================================================================================================
+                                    organized version
+======================================================================================================================================================
+
+Here’s a reorganized version of your thoughts, structured into clear sections for better readability and actionability:
+
+---
+
+### **1. File Storage (AWS S3 Buckets)**
+- **Objective**: Determine where to store files like images, videos, and audios.
+- **Solution**: Use AWS S3 buckets for file storage.
+- **Action Items**:
+  - Research and set up S3 buckets for different file types (images, videos, audios).
+  - Define access policies and permissions for the buckets.
+  - Integrate S3 with your application for file uploads and retrievals.
+
+---
+
+### **2. Central User API**
+- **Objective**: Use the central user API for login functionality only.
+- **Details**:
+  - No need for social media registration.
+  - API Endpoint: [CMS Central API Swagger](https://cms-central-ffb6acaub5afeecj.uaenorth-01.azurewebsites.net/swagger/index.html)
+- **Action Items**:
+  - Integrate the login endpoint into your system.
+  - Ensure no unnecessary endpoints (e.g., social media registration) are included.
+
+---
+
+### **3. System Design Diagram**
+- **Objective**: Visualize the system architecture.
+- **Tool**: [Excalidraw](https://excalidraw.com/#json=0hM4g85eIJ8J3z0XIWmc0,EgWZpkic1fXErExkw3AzCA)
+- **Action Items**:
+  - Review and refine the system design diagram.
+  - Ensure all components (e.g., S3, APIs, user flows) are included.
+
+---
+
+### **4. Core Functionality: Post Sharing**
+- **Objective**: Implement post-sharing functionality.
+- **Current Thought Process**:
+  - When a user shares a post:
+    1. Add the `userId` to the post’s share list.
+    2. Add the `postId` to the user’s account object in a shared list.
+    3. Treat the shared post as a regular post in the user’s feed.
+- **Action Items**:
+  - Implement the logic for adding `userId` to the post’s share list.
+  - Implement the logic for adding `postId` to the user’s shared list.
+  - Ensure shared posts appear in the user’s feed and public feed.
+
+---
+
+### **5. Tags for Service Providers**
+- **Objective**: Add tagging functionality for service providers.
+- **Details**:
+  - Tags should only be available to the service providers subsystem.
+  - Tags will be merged into the post creation endpoint.
+  - Regular posts will have optional tags, while service provider posts will require tags.
+- **Action Items**:
+  - Add endpoints for handling tags.
+  - Modify the post creation endpoint to include tags.
+  - Ensure tags are properly validated and stored.
+
+---
+
+### **6. Deleting Shared Posts**
+- **Objective**: Implement functionality to delete shared posts.
+- **Current Thought Process**:
+  - Two requests are needed:
+    1. Delete the `userId` from the post’s share list.
+    2. Delete the `postId` from the user’s account object.
+  - The post should then be removed from the user’s feed.
+- **Action Items**:
+  - Implement the logic for deleting shared posts.
+  - Ensure the feed updates dynamically after deletion.
+
+---
+
+### **7. Delete Post Route Improvements**
+- **Objective**: Improve the response format for the delete post route.
+- **Current Response**:
+  - For failure: `{ "acknowledged": true, "deletedCount": 0 }`
+  - Desired Response:
+    - Failure: `{ "message": "post not found, please enter a valid post id" }`
+    - Success: `{ "message": "post deleted successfully" }`
+- **Action Items**:
+  - Modify the delete post route to return user-friendly responses.
+
+---
+
+### **8. Comments Functionality**
+- **Objective**: Improve comments functionality.
+- **Issues**:
+  - The `get comments with pagination` endpoint is currently useless.
+  - The `react to a comment` and `reply to a comment` endpoints do nothing.
+  - The `delete comment` response returns the deleted comment, which needs to be changed.
+- **Action Items**:
+  - Remove or enhance the `get comments with pagination` endpoint.
+  - Implement functionality for reacting to and replying to comments.
+  - Modify the `delete comment` response to be more appropriate.
+
+---
+
+### **9. Post Serving Strategy**
+- **Objective**: Define a strategy for serving posts in feeds.
+- **Current Thought Process**:
+  - Use pagination to serve posts (e.g., 10 posts per request).
+  - Public feed: Random ordering or date-based ordering.
+  - Reports feed: Newest to oldest (priority queue).
+- **Action Items**:
+  - Decide on the ordering strategy for both feeds.
+  - Implement pagination logic for post retrieval.
+
+---
+
+### **10. Future Functionality: Friends and Chat**
+- **Objective**: Plan for future features like adding/removing friends and chat functionality.
+- **Details**:
+  - This functionality will be part of Stage 2.
+  - Keep it on hold for now.
+- **Action Items**:
+  - Document the requirements for Stage 2.
+  - Ensure the current system design can accommodate future features.
+
+---
+
+### **Summary of Action Items**
+1. Set up and integrate AWS S3 buckets for file storage.
+2. Integrate the central user API login endpoint.
+3. Refine the system design diagram.
+4. Implement post-sharing logic.
+5. Add tagging functionality for service providers.
+6. Implement shared post deletion.
+7. Improve the delete post route response.
+8. Enhance comments functionality.
+9. Define and implement post serving strategy.
+10. Plan for future friends and chat functionality.
+
+---
+
+This reorganization should help you prioritize and tackle each task systematically. Let me know if you need further clarification or assistance!
