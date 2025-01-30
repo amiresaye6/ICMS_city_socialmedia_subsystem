@@ -10,6 +10,7 @@ require('dotenv').config();                 // Middleware for environment variab
 const postsRoutes = require("./Routes/posts.routes");
 const commentsRoutes = require("./Routes/comments.routes");
 const authRoutes = require("./Routes/auth.routes");
+const centralAuthRoutes = require("./Routes/centraAuth.routes");
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use(morgan('dev'));                     // Log HTTP requests, for debugging 
 app.use("/api/posts", postsRoutes);
 app.use("/api/comments", commentsRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/centra/auth", centralAuthRoutes);
 
 
 const port = process.env.PORT || 5555;
@@ -39,4 +41,3 @@ mongoose.connect(MONGODB_CONNECTION_STRING)
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 }); 
-
