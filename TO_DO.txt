@@ -58,6 +58,9 @@ random ordering in the pubilc and from newset to oldest in the reports feed (thi
 - need to thing of i would add the ability to add friends and remove them and things like that which will open the gate twards the chating app part
 of my system, this step i need to keep it for now, it will be at stage 2.
 
+- when deleting a post or any thing, remimber to delete all the data being stored that relate to it like meida of a deleted post for example
+
+- handele the case of other users that can change my reactions ok.
 ======================================================================================================================================================
                                     organized version
 ======================================================================================================================================================

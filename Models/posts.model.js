@@ -4,8 +4,7 @@ const { Schema } = mongoose;
 const postSchema = new Schema(
     {
         author: {
-            type: Schema.Types.ObjectId,
-            ref: 'User',
+            type: String,
             required: true
         },
         availability: {
@@ -63,8 +62,7 @@ const postSchema = new Schema(
         impressionList: [
             {
                 userId: {
-                    type: Schema.Types.ObjectId,
-                    ref: 'User',
+                    type: String,
                     required: true
                 },
                 impressionType: {
@@ -80,8 +78,8 @@ const postSchema = new Schema(
         },
         shareList: [
             {
-                type: Schema.Types.ObjectId,
-                ref: 'User'
+                type: String,
+                required: true
             }
         ],
         comments: [
@@ -107,15 +105,14 @@ const postSchema = new Schema(
         },
         saveList: [
             {
-                type: Schema.Types.ObjectId,
-                ref: 'User'
+                type: String,
+                required: true
             }
         ],
         flags: [
             {
                 userId: {
-                    type: Schema.Types.ObjectId,
-                    ref: 'User',
+                    type: String,
                     required: true
                 },
                 reason: {

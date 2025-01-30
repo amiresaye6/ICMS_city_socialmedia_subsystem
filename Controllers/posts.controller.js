@@ -2,6 +2,21 @@ const { validationResult } = require("express-validator");
 const Post = require("../Models/posts.model");
 const mongoose = require("mongoose");
 
+// Helper function to check if the user is allowed to delete the post
+const isUserAllowed = async (req, postId) => {
+  const post = await Post.findById(postId);
+
+  if (!post) {
+    return { error: { status: 404, message: "Post not found" } };
+  }
+
+  if (post.author.toString() !== req.user.userId) {
+    return { error: { status: 403, message: "Forbidden: You are not allowed to do this action" } };
+  }
+
+  return post;
+};
+
 // get all posts to-do >> adding pagination to it like 10 posts each time
 exports.getAllPosts = async (req, res) => {
   const result = validationResult(req);
@@ -84,7 +99,7 @@ exports.createPost = async (req, res) => {
     // Prepare Post Data
     const newPostData = {
       postCaption: postCaption.trim(), // Remove extra spaces
-      author: req.user.userId, // Ensure the user is authenticated
+      author: req.user.userId, // Ensure the user is authenticated, nameid and userId are the same
       media
     };
 
@@ -144,14 +159,6 @@ exports.addReaction = async (req, res) => {
         .json({ message: "Post ID, User ID, and Reaction Type are required" });
     }
 
-    // Validate IDs
-    if (
-      !mongoose.Types.ObjectId.isValid(userId) ||
-      !mongoose.Types.ObjectId.isValid(postId)
-    ) {
-      return res.status(400).json({ message: "Invalid User ID or Post ID" });
-    }
-
     // Find the post using the postId
     const post = await Post.findById(postId);
     if (!post) {
@@ -160,7 +167,7 @@ exports.addReaction = async (req, res) => {
 
     // Check if the user has already reacted to this post
     const existingReactionIndex = post.impressionList.findIndex((react) =>
-      react.userId.equals(userId)
+      react.userId.toString() === userId
     );
 
     if (existingReactionIndex !== -1) {
@@ -191,7 +198,7 @@ exports.addReaction = async (req, res) => {
     } else {
       // If no previous reaction exists, add a new reaction
       post.impressionList.push({
-        userId: new mongoose.Types.ObjectId(userId),
+        userId,
         impressionType: reactionType,
       });
       post.impressionsCount[reactionType]++;
@@ -228,14 +235,6 @@ exports.sharePost = async (req, res) => {
         .json({ message: "Post ID and User ID are required" });
     }
 
-    // Validate IDs
-    if (
-      !mongoose.Types.ObjectId.isValid(postId) ||
-      !mongoose.Types.ObjectId.isValid(userId)
-    ) {
-      return res.status(400).json({ message: "Invalid Post ID or User ID" });
-    }
-
     // Find the post
     const post = await Post.findById(postId);
     if (!post) {
@@ -244,7 +243,7 @@ exports.sharePost = async (req, res) => {
 
     // Check if the user has already shared the post
     const alreadyShared = post.shareList.some((sharedUserId) =>
-      sharedUserId.equals(userId)
+      sharedUserId.toString() === userId
     );
 
     if (alreadyShared) {
@@ -273,20 +272,18 @@ exports.sharePost = async (req, res) => {
 // delete an existing post, to-do >> nees some error ahndling and data validation
 exports.deletePost = async (req, res) => {
   try {
-    const id = req.params.postId;
-    const post = await Post.findById(id);
+    const postId = req.params.postId;
 
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+    const result = await isUserAllowed(req, postId);
+
+    // If an error exists, return the error response
+    if (result.error) {
+      return res.status(result.error.status).json({ message: result.error.message });
     }
 
-    // Check if the logged-in user is the owner of the post
-    if (post.user.toString() !== req.user.userId) {
-      return res.status(403).json({ message: "Forbidden: You are not allowed to delete this post" });
-    }
-
-    await Post.deleteOne({ _id: id });
+    await Post.deleteOne({ _id: postId });
     res.json({ message: "Post deleted successfully" });
+
 
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
@@ -298,6 +295,14 @@ exports.deletePost = async (req, res) => {
 exports.updateCaption = async (req, res) => {
   try {
     const postId = req.params.postId;
+
+    const result = await isUserAllowed(req, postId);
+
+    // If an error exists, return the error response
+    if (result.error) {
+      return res.status(result.error.status).json({ message: result.error.message });
+    }
+
     const updatedPost = await Post.findByIdAndUpdate(
       postId, // Document ID
       { $set: { postCaption: req.body.newCaption } }, // Update operation
@@ -326,6 +331,13 @@ exports.updateStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status value" });
     }
 
+    const result = await isUserAllowed(req, postId);
+
+    // If an error exists, return the error response
+    if (result.error) {
+      return res.status(result.error.status).json({ message: result.error.message });
+    }
+
     const updatedPost = await Post.findByIdAndUpdate(
       postId,
       { $set: { status: newStatus } }, //Update operation
@@ -350,6 +362,14 @@ exports.updateStatus = async (req, res) => {
 exports.updateAvailability = async (req, res) => {
   try {
     const postId = req.params.postId;
+
+    const result = await isUserAllowed(req, postId);
+
+    // If an error exists, return the error response
+    if (result.error) {
+      return res.status(result.error.status).json({ message: result.error.message });
+    }
+
     const updatedPost = await Post.findByIdAndUpdate(
       postId, // Document ID
       { $set: { availability: req.body.newAvailability } }, // Update operation
@@ -371,14 +391,6 @@ exports.savePost = async (req, res) => {
       return res
         .status(400)
         .json({ message: "Post ID and User ID are required" });
-    }
-
-    // Validate IDs
-    if (
-      !mongoose.Types.ObjectId.isValid(postId) ||
-      !mongoose.Types.ObjectId.isValid(userId)
-    ) {
-      return res.status(400).json({ message: "Invalid Post ID or User ID" });
     }
 
     // Find the post
@@ -427,12 +439,11 @@ exports.addTag = async (req, res) => {
         .json({ message: "Post ID and new tag are required" });
     }
 
-    // search for post
-    const post = await Post.findById(postId);
+    const post = await isUserAllowed(req, postId);
 
-    // make sure the post exists
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+    // If an error exists, return the error response
+    if (post.error) {
+      return res.status(post.error.status).json({ message: post.error.message });
     }
 
     //add new tag for tags
@@ -464,11 +475,12 @@ exports.updateTag = async (req, res) => {
         .status(400)
         .json({ message: "Post ID, old tag, and new tag are required" });
     }
-    const post = await Post.findById(postId);
 
-    // post existing
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+    const post = await isUserAllowed(req, postId);
+
+    // If an error exists, return the error response
+    if (post.error) {
+      return res.status(post.error.status).json({ message: post.error.message });
     }
 
     // search for old tag and make sure it exists
@@ -504,11 +516,14 @@ exports.deleteTag = async (req, res) => {
         .status(400)
         .json({ message: "Post ID and tag to delete are required" });
     }
-    const post = await Post.findById(postId);
-    if (!post) {
-      //post existing
-      return res.status(404).json({ message: "Post not found" });
+
+    const post = await isUserAllowed(req, postId);
+
+    // If an error exists, return the error response
+    if (post.error) {
+      return res.status(post.error.status).json({ message: post.error.message });
     }
+
     const tagIndex = post.tags.indexOf(tagToDelete); //tag we want to delete
     if (tagIndex === -1) {
       // make sure tag is exist
