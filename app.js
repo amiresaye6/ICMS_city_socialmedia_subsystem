@@ -25,8 +25,8 @@ app.use(cookieParser());                   // Parse cookie header and populate r
 
 // Routes section
 app.use("/api/posts", postsRoutes);
-// app.use("/api/comments", commentsRoutes);
-app.use("/api/auth", authRoutes);
+app.use("/api/comments", commentsRoutes);
+// app.use("/api/auth", authRoutes);
 app.use("/api/auth", centralAuthRoutes);
 
 
