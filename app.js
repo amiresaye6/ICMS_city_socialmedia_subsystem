@@ -5,6 +5,7 @@ const morgan = require('morgan');           // Middleware for HTTP request loggi
 // const { check, validationResult } = require('express-validator'); // Middleware for request validation
 const path = require('path');
 require('dotenv').config();                 // Middleware for environment variable management
+const cookieParser = require('cookie-parser');
 
 // import routes
 const postsRoutes = require("./Routes/posts.routes");
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded payloads >
 app.use('/public/uploads', express.static(path.join(__dirname, 'public/uploads')));          // Serve static files from the 'Public' directory
 app.use(cors());                            // Enable CORS, this one for deployment reasons to access the api from any ware.
 app.use(morgan('dev'));                     // Log HTTP requests, for debugging and logging
+app.use(cookieParser());                   // Parse cookie header and populate req.cookies with an object keyed by the cookie names.
 
 // Routes section
 app.use("/api/posts", postsRoutes);
