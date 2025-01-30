@@ -25,11 +25,11 @@ module.exports.centralLogin = async (req, res) => {
         }).then(res => res.json());
 
 
-        res.cookie('token', token, {
-            httpOnly: true,   // Prevents client-side access
-            // secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-            sameSite: 'Strict',
-        });
+        // res.cookie('token', token, {
+        //     httpOnly: true,   // Prevents client-side access
+        //     // secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        //     sameSite: 'Strict',
+        // });
 
         // Respond with the token and user info
         res.status(200).json({

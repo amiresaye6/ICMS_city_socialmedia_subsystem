@@ -272,12 +272,27 @@ exports.sharePost = async (req, res) => {
 
 // delete an existing post, to-do >> nees some error ahndling and data validation
 exports.deletePost = async (req, res) => {
-  // delete logic
-  const id = req.params.postId;
-  const result = await Post.deleteOne({ _id: id });
-  res.json(result);
-  // res.json({ id });
+  try {
+    const id = req.params.postId;
+    const post = await Post.findById(id);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Check if the logged-in user is the owner of the post
+    if (post.user.toString() !== req.user.userId) {
+      return res.status(403).json({ message: "Forbidden: You are not allowed to delete this post" });
+    }
+
+    await Post.deleteOne({ _id: id });
+    res.json({ message: "Post deleted successfully" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
 };
+
 
 // update an existing post caption to-do >> needs some error handling and data validation
 exports.updateCaption = async (req, res) => {
