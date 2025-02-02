@@ -3,9 +3,13 @@ const { Schema } = mongoose;
 
 const userSchema = new Schema(
     {
+        centralUsrId: {
+            type: String,
+            required: true
+        },
         rule: {
             type: String,
-            enum: ['user', 'admin'],
+            enum: ['user', 'admin', 'superAdmin'],
             default: 'user'
         },
         userName: {
@@ -17,15 +21,13 @@ const userSchema = new Schema(
             unique: true,
             required: true
         },
-        password: {
-            type: String,
-            required: true
-        },
         avatarUrl: {
-            type: String
+            type: String,
+            default: "/public/uploads/default.png"
         }, // Profile picture
         bio: {
-            type: String
+            type: String,
+            default: 'hi there!'
         }, // Optional bio
         friends: [
             {
@@ -33,12 +35,6 @@ const userSchema = new Schema(
                 ref: 'User'
             }
         ], // List of friend user IDs
-        groups: [
-            {
-                type: Schema.Types.ObjectId,
-                ref: 'Group'
-            }
-        ], // Group memberships (if applicable)
         posts: [
             {
                 type: Schema.Types.ObjectId,
