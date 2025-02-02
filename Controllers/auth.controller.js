@@ -1,3 +1,4 @@
+// no need for this module any more
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../Models/users.model");

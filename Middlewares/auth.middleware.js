@@ -1,3 +1,4 @@
+// no need for this module any more.
 const jwt = require("jsonwebtoken");
 const Post = require("../Models/posts.model");
 const Comment = require("../Models/comments.model");
