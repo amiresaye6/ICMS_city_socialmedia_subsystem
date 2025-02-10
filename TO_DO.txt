@@ -61,6 +61,12 @@ of my system, this step i need to keep it for now, it will be at stage 2.
 - when deleting a post or any thing, remimber to delete all the data being stored that relate to it like meida of a deleted post for example
 
 - handele the case of other users that can change my reactions ok.
+
+- if i want to show user info like user avatar, user name, user unique name, stuff like that, do i need to call central api to get this specifice user or
+just store user info in a local table in the social media database and then fetch user data from it based on the user id?
+which is better solution, to have an endpoint to get all user info from central user managment or to have it locally, but if it is locally, and some data is
+changed like user name or avatar for example, waht happens to other services?
+
 ======================================================================================================================================================
                                     organized version
 ======================================================================================================================================================
