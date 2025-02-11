@@ -10,7 +10,7 @@ const cookieParser = require('cookie-parser');
 // import routes
 const postsRoutes = require("./Routes/posts.routes");
 const commentsRoutes = require("./Routes/comments.routes");
-const authRoutes = require("./Routes/auth.routes");
+const usersRoutes = require("./Routes/users.routes");
 const centralAuthRoutes = require("./Routes/centraAuth.routes");
 
 const app = express();
@@ -26,7 +26,7 @@ app.use(cookieParser());                   // Parse cookie header and populate r
 // Routes section
 app.use("/api/posts", postsRoutes);
 app.use("/api/comments", commentsRoutes);
-// app.use("/api/auth", authRoutes);
+app.use("/api/users", usersRoutes);
 app.use("/api/auth", centralAuthRoutes);
 
 

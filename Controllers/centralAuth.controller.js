@@ -1,5 +1,7 @@
 const { validationResult } = require("express-validator")
 const mailer = require("../Middlewares/emailSender.middleware");
+const fetch = require("node-fetch");
+const User = require("../Models/users.model");
 
 const baseUrl = "https://cms-central-ffb6acaub5afeecj.uaenorth-01.azurewebsites.net/api/Auth/login"
 
@@ -24,6 +26,21 @@ module.exports.centralLogin = async (req, res) => {
             headers: { 'Content-Type': 'application/json' }
         }).then(res => res.json());
 
+        if (!user) {
+            return res.status(401).json({ message: "Invalid credentials" });
+        }
+
+        // Check if the user already exists in the local database
+        const myUser = await User.findOne({centralUsrId: user.value.id})
+        if (!myUser) {
+            // create a new user
+            const newUser = new User({
+                centralUsrId: user.value.id,
+                userName: user.value.userName,
+                email: user.value.email,
+            });
+            await newUser.save();
+        }
 
         // res.cookie('token', token, {
         //     httpOnly: true,   // Prevents client-side access
@@ -59,9 +76,9 @@ module.exports.centralLogin = async (req, res) => {
             The ICMS Team
         `;
 
-        mailer.sendEmail(email, emailSubject, emailText)
+        // mailer.sendEmail(email, emailSubject, emailText)
             // .then(() => console.log("Login notification email sent successfully"))
-            .catch((error) => console.error("Failed to send login notification email:", error));
+            // .catch((error) => console.error("Failed to send login notification email:", error));
 
     } catch (error) {
         console.error("Error during login:", error);
