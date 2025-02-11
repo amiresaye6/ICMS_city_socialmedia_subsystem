@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const commentsController = require("../Controllers/comments.controller");
-const authMiddleware = require("../Middlewares/auth.middleware");
+const { centralAuthenticate } = require('../Middlewares/centralAuth.middleware');
+//const authMiddleware = require("../Middlewares/auth.middleware");
 
 // Get comments with pagination
 router.get('/', commentsController.getComments);
@@ -8,20 +9,21 @@ router.get('/', commentsController.getComments);
 router.get('/post/:postId', commentsController.getCommentsByPostId);
 
 // Add a comment to a post
-router.post('/', authMiddleware.authenticate, commentsController.createComment);
+router.post('/', centralAuthenticate, commentsController.createComment);
 
 // Update an existing comment
-router.put('/:commentId', authMiddleware.authenticate, authMiddleware.isCommentCreator, commentsController.updateComment);
+router.put('/:commentId', centralAuthenticate,  commentsController.updateComment);
 
 // Add a reply to a comment
 // ==========>> not implmented yet
-router.post('/:commentId/replies', authMiddleware.authenticate, commentsController.addReply);
+router.post('/:commentId/replies', centralAuthenticate, commentsController.addReply);
 
 // Delete an existing comment
-router.delete('/:commentId', authMiddleware.authenticate, authMiddleware.isCommentCreator, commentsController.deleteComment);
+router.delete('/:commentId', centralAuthenticate,  commentsController.deleteComment);
+
 
 // React to a comment
 // ==========>> not implmented yet
-router.post('/:commentId/reactions', authMiddleware.authenticate, commentsController.reactToComment);
+router.post('/:commentId/reactions', centralAuthenticate, commentsController.reactToComment);
 
 module.exports = router;

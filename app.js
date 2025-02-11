@@ -30,7 +30,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/auth", centralAuthRoutes);
 
 
-const port = process.env.PORT || 5555;
+const port = process.env.PORT || 1234;
 const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING || "mongodb://127.0.0.1:27017/Socialmedia"
 
 // Connect to MongoDB on Socialmedia database
