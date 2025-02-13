@@ -1,5 +1,6 @@
 const { validationResult } = require("express-validator");
 const Post = require("../Models/posts.model");
+const User = require("../Models/users.model");
 const mongoose = require("mongoose");
 
 // Helper function to check if the user is allowed to delete the post
@@ -105,6 +106,12 @@ exports.createPost = async (req, res) => {
 
     // Create and Save the New Post in MongoDB
     const newPost = await Post.create(newPostData);
+    // save the post id in the suer posts array.
+    const updatedUser = await User.find({ "centralUsrId": req.user.userId });
+
+    updatedUser[0].posts.push(newPost._id);
+    updatedUser[0].save();
+
     res.status(201).json(newPost);
 
   } catch (error) {
@@ -282,11 +289,17 @@ exports.deletePost = async (req, res) => {
     }
 
     await Post.deleteOne({ _id: postId });
+    // delete the psot id from usr object.
+    const updatedUser = await User.find({ "centralUsrId": req.user.userId });
+
+    updatedUser[0].posts.pull(postId);
+    updatedUser[0].save();
+
     res.json({ message: "Post deleted successfully" });
 
 
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: error.message });
   }
 };
 
