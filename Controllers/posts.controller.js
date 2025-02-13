@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 // Helper function to check if the user is allowed to delete the post
 const isUserAllowed = async (req, postId, userId = null) => {
   if (userId) {
-    const user = await User.find({"centralUsrId": userId});
+    const user = await User.find({ "centralUsrId": userId });
 
     if (!user) {
       return { error: { status: 404, message: "user not found" } };
@@ -14,7 +14,7 @@ const isUserAllowed = async (req, postId, userId = null) => {
 
     if (user[0].centralUsrId !== req.user.userId) {
       console.log(user[0].centralUsrId, req.user.userId);
-      
+
       return { error: { status: 403, message: "Forbidden: You are not allowed to do this action, userUpdate" } };
     }
 
@@ -280,6 +280,20 @@ exports.sharePost = async (req, res) => {
     post.shareList.push(userId);
     post.shareCount += 1;
 
+    
+    const result = await isUserAllowed(req, null, userId);
+
+    // If an error exists, return the error response
+    if (result.error) {
+      return res.status(result.error.status).json({ message: result.error.message });
+    }
+
+    // add the shared post to user object
+    await User.updateOne(
+      { centralUsrId: userId },
+      { $push: { sharedPosts: postId } });
+
+
     await post.save();
 
     res.status(200).json({
@@ -428,19 +442,19 @@ exports.savePost = async (req, res) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    // Check if the user has already shared the post
-    const alreadyShared = post.saveList.some((saveUserId) =>
+    // Check if the user has already saved the post
+    const alreadySaved = post.saveList.some((saveUserId) =>
       saveUserId.toString() === userId
     );
 
-    if (alreadyShared) {
-      // If already shared, return a message without making changes
+    if (alreadySaved) {
+      // If already saved, return a message without making changes
       return res
         .status(400)
         .json({ message: "User has already saved this post" });
     }
 
-    // Add the user to the share list and increment shareCount
+    // Add the user to the saved list and increment saveCount
     post.saveList.push(userId);
     post.saveCount += 1;
 
@@ -487,13 +501,13 @@ exports.unSavePost = async (req, res) => {
       return res.status(result.error.status).json({ message: result.error.message });
     }
 
-    // Check if the user has already shared the post
-    const alreadyShared = post.saveList.some((saveUserId) =>
+    // Check if the user has already saved the post
+    const alreadySaved = post.saveList.some((saveUserId) =>
       saveUserId.toString() === userId
     );
 
-    if (alreadyShared) {
-      // If already shared, remove it from the saved list
+    if (alreadySaved) {
+      // If already saved, remove it from the saved list
 
       post.saveList = post.saveList.filter((saveUserId) =>
         saveUserId.toString() !== userId
@@ -506,7 +520,7 @@ exports.unSavePost = async (req, res) => {
       );
 
     } else {
-      // If not shared, return a message without making changes
+      // If not saved, return a message without making changes
       return res
         .status(400)
         .json({ message: "User has not saved this post" });
@@ -690,6 +704,64 @@ exports.getPostsByUserId = async (req, res) => {
 };
 
 
-exports.deleteShare = async (req, res) => {
-  res.json({ message: 'route and function not implmented yet' })
+exports.unshare = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { userId } = req.user;
+
+    // Validate required fields
+    if (!postId || !userId) {
+      return res
+        .status(400)
+        .json({ message: "Post ID and User ID are required" });
+    }
+
+    // Find the post
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const result = await isUserAllowed(req, null, userId);
+
+    // If an error exists, return the error response
+    if (result.error) {
+      return res.status(result.error.status).json({ message: result.error.message });
+    }
+
+    // Check if the user has already shared the post
+    const alreadyShared = post.shareList.some((shareUserId) =>
+      shareUserId.toString() === userId
+    );
+
+    if (alreadyShared) {
+      // If already shared, remove it from the shared list
+
+      post.shareList = post.shareList.filter((shareUserId) =>
+        shareUserId.toString() !== userId
+      );
+      post.shareCount -= 1;
+
+      await User.updateOne(
+        { centralUsrId: userId },
+        { $pull: { sharedPosts: postId } }
+      );
+
+    } else {
+      // If not shared, return a message without making changes
+      return res
+        .status(400)
+        .json({ message: "User has not shared this post" });
+    };
+
+    await post.save();
+
+    res.status(200).json({
+      message: "User removed from the share lists successfully",
+      post,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
 }

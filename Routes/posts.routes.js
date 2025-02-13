@@ -59,10 +59,10 @@ router.post(
 );
 
 // Delete a share (optional) // need implementation
-router.delete(
-  "/:postId/shares",
+router.post(
+  "/:postId/unshare",
   centralAuthMiddleware.centralAuthenticate,
-  postsController.deleteShare
+  postsController.unshare
 );
 
 //  **TAG ROUTES**
