@@ -101,6 +101,13 @@ router.post(
   postsController.savePost
 );
 
+// unsave a post
+router.post(
+  "/:postId/unsave",
+  centralAuthMiddleware.centralAuthenticate,
+  postsController.unSavePost
+);
+
 //  **STATUS & AVAILABILITY ROUTES**
 
 // Update the status of a post (e.g., published, draft, etc.) // esraa validation
