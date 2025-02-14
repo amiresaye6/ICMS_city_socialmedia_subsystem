@@ -15,7 +15,9 @@ router.post('/post/:postId', centralAuthenticate, commentsController.createComme
 router.put('/:commentId', centralAuthenticate, commentsController.updateComment);
 
 // Delete all comments (for testing purposes only)
-router.delete("/allComments", commentsController.deleteAllComments);
+if (process.env.NODE_ENV !== 'production') {
+    router.delete("/allComments", commentsController.deleteAllComments);
+}
 
 // Delete an existing comment (and its replies recursively)
 router.delete('/:commentId', centralAuthenticate, commentsController.deleteComment);

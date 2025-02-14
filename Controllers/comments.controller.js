@@ -6,13 +6,10 @@ const { isUserAllowed } = require("../Middlewares/centralAuth.middleware");
 
 module.exports.getComments = async (req, res) => {
     try {
-        // Fetch all comments
         const comments = await Comment.find();
-
         if (!comments.length) {
             return res.status(404).json({ message: "No comments found" });
         }
-
         res.status(200).json(comments);
     } catch (error) {
         console.error("Error fetching comments:", error);
@@ -23,18 +20,13 @@ module.exports.getComments = async (req, res) => {
 module.exports.getCommentsByPostId = async (req, res) => {
     try {
         const postId = req.params.postId;
-
         if (!mongoose.Types.ObjectId.isValid(postId)) {
             return res.status(400).json({ message: "Invalid Post ID" });
         }
-
-        // Fetch comments for the post
         const comments = await Comment.find({ postId });
-
         if (!comments.length) {
             return res.status(404).json({ message: "No comments found" });
         }
-
         res.status(200).json(comments);
     } catch (error) {
         console.error("Error fetching comments:", error);
@@ -44,32 +36,34 @@ module.exports.getCommentsByPostId = async (req, res) => {
 
 module.exports.createComment = async (req, res) => {
     try {
-        // Validate request body using express-validator
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { content, parentCommentId } = req.body; // `parentCommentId` is optional
+        const { content, parentCommentId } = req.body;
         const { postId } = req.params;
 
-        // Validate IDs
         if (!mongoose.Types.ObjectId.isValid(postId)) {
             return res.status(400).json({ message: "Invalid Post ID" });
         }
 
-        // Validate parentCommentId if provided
         if (parentCommentId && !mongoose.Types.ObjectId.isValid(parentCommentId)) {
             return res.status(400).json({ message: "Invalid Parent Comment ID" });
         }
 
-        // Find the post
         const post = await Post.findById(postId);
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
 
-        // Create the comment
+        if (parentCommentId) {
+            const parentComment = await Comment.findById(parentCommentId);
+            if (!parentComment) {
+                return res.status(404).json({ message: "Parent comment not found" });
+            }
+        }
+
         const comment = await Comment.create({
             postId,
             userId: req.user.userId,
@@ -77,7 +71,10 @@ module.exports.createComment = async (req, res) => {
             parentCommentId
         });
 
-        // If it's a top-level comment, add it to the post's comments array
+        await Comment.findByIdAndUpdate(parentCommentId,
+            { $push: { replies: comment } },
+        )
+
         if (!parentCommentId) {
             post.comments.push(comment._id);
             await post.save();
@@ -108,16 +105,17 @@ module.exports.updateComment = async (req, res) => {
             return res.status(400).json({ message: "Content cannot be empty" });
         }
 
-        const result = await isUserAllowed(req, null, null, commentId);
-
-        if (result.error) {
-            return res.status(result.error.status).json({ message: result.error.message });
+        // Check if the user is allowed to update the comment
+        const isAllowed = await isUserAllowed(req, null, null, commentId);
+        if (isAllowed.error) {
+            return res.status(isAllowed.error.status).json({ message: isAllowed.error.message });
         }
 
-        result.content = content;
-        await result.save();
+        const comment = isAllowed.comment; // Get the comment from the isUserAllowed response
+        comment.content = content;
+        await comment.save();
 
-        res.status(200).json({ message: "Comment updated successfully", result });
+        res.status(200).json({ message: "Comment updated successfully", comment });
     } catch (error) {
         console.error("Error updating comment:", error);
         res.status(500).json({ message: "Internal server error", error: error.message });
@@ -128,38 +126,27 @@ module.exports.deleteComment = async (req, res) => {
     try {
         const { commentId } = req.params;
 
-        // Validate commentId
         if (!mongoose.Types.ObjectId.isValid(commentId)) {
             return res.status(400).json({ message: "Invalid Comment ID" });
         }
 
-        const result = await isUserAllowed(req, null, null, commentId);
-
-        if (result.error) {
-            return res.status(result.error.status).json({ message: result.error.message });
+        // Check if the user is allowed to delete the comment
+        const isAllowed = await isUserAllowed(req, null, null, commentId);
+        if (isAllowed.error) {
+            return res.status(isAllowed.error.status).json({ message: isAllowed.error.message });
         }
 
-        // Find the comment
-        const comment = await Comment.findById(commentId);
-        if (!comment) {
-            return res.status(404).json({ message: "Comment not found" });
-        }
+        const comment = isAllowed.comment; // Get the comment from the isUserAllowed response
 
-        // Recursively delete replies
-        const deleteReplies = async (parentCommentId) => {
-            const replies = await Comment.find({ parentCommentId });
-            for (const reply of replies) {
-                await deleteReplies(reply._id); // Recursively delete nested replies
-                await Comment.findByIdAndDelete(reply._id);
-            }
-        };
-
-        await deleteReplies(commentId);
+        // Recursively delete all replies
+        const replies = await Comment.find({ parentCommentId: commentId });
+        const replyIds = replies.map(reply => reply._id);
+        await Comment.deleteMany({ _id: { $in: replyIds } });
 
         // Delete the comment itself
         await Comment.findByIdAndDelete(commentId);
 
-        // If it's a top-level comment, remove it from the post's comments array
+        // Remove from post's comments array if it's a top-level comment
         if (!comment.parentCommentId) {
             const post = await Post.findById(comment.postId);
             if (post) {
@@ -196,14 +183,19 @@ module.exports.reactToComment = async (req, res) => {
         }
 
         // Check if the user has already reacted
-        const existingReaction = comment.ReactsList.get(userId);
+        const existingReactionIndex = comment.reactions.findIndex(reaction => reaction.userId === userId);
 
-        if (existingReaction === impressionType) {
+        if (existingReactionIndex !== -1) {
             // Remove the reaction if it's the same type
-            comment.ReactsList.delete(userId);
+            if (comment.reactions[existingReactionIndex].impressionType === impressionType) {
+                comment.reactions.splice(existingReactionIndex, 1);
+            } else {
+                // Update the reaction
+                comment.reactions[existingReactionIndex].impressionType = impressionType;
+            }
         } else {
-            // Add or update the reaction
-            comment.ReactsList.set(userId, impressionType);
+            // Add a new reaction
+            comment.reactions.push({ userId, impressionType });
         }
 
         await comment.save();
@@ -211,7 +203,7 @@ module.exports.reactToComment = async (req, res) => {
         res.status(200).json({
             message: "Reaction updated successfully",
             comment,
-            reactionCount: comment.reactionCount // Use the virtual property
+            reactionCount: comment.reactionCount
         });
     } catch (error) {
         console.error("Error updating reaction:", error);

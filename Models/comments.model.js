@@ -8,6 +8,11 @@ const commentSchema = new Schema(
             ref: 'Post',
             required: true
         },
+        parentCommentId: {
+            type: Schema.Types.ObjectId,
+            ref: 'Comment',
+            default: null
+        },
         userId: {
             type: String,
             required: true
@@ -20,11 +25,10 @@ const commentSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'Comment'
         }],
-        ReactsList: {
-            type: Map,
-            of: String,
-            default: {}
-        }
+        reactions: [{
+            userId: String,
+            impressionType: String
+        }]
     },
     {
         timestamps: true
@@ -32,7 +36,7 @@ const commentSchema = new Schema(
 
 // Virtual for reaction count
 commentSchema.virtual('reactionCount').get(function () {
-    return this.ReactsList.size;
+    return this.reactions.length;
 });
 
 // Indexes for performance
