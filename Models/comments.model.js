@@ -9,8 +9,7 @@ const commentSchema = new Schema(
             required: true
         },
         userId: {
-            type: Schema.Types.ObjectId,
-            ref: 'User',
+            type: String,
             required: true
         },
         content: {
@@ -18,46 +17,26 @@ const commentSchema = new Schema(
             required: true
         },
         replies: [{
-            userId: {
-                type: Schema.Types.ObjectId,
-                ref: 'User'
-            },
-            content: {
-                type: String,
-                required: true
-            },
-            date: {
-                type: Date,
-                default: Date.now
-            },
-            replies: [{
-                type: Schema.Types.ObjectId,
-                ref: 'Comment'
-            }] // Recursive reference for nested replies
+            type: Schema.Types.ObjectId,
+            ref: 'Comment'
         }],
-        ReactsLIst: {
-            count: {
-                type: Number,
-                default: 0
-            },
-            list: [
-                {
-                    userId: {
-                        type: Schema.Types.ObjectId,
-                        ref: 'User',
-                        required: true
-                    },
-                    impressionType: {
-                        type: String,
-                        enum: ['like', 'love', 'care', 'laugh', 'sad', 'hate'],
-                        required: true
-                    }
-                }
-            ]
-        },
+        ReactsList: {
+            type: Map,
+            of: String,
+            default: {}
+        }
     },
     {
         timestamps: true
     });
+
+// Virtual for reaction count
+commentSchema.virtual('reactionCount').get(function () {
+    return this.ReactsList.size;
+});
+
+// Indexes for performance
+commentSchema.index({ postId: 1 });
+commentSchema.index({ userId: 1 });
 
 module.exports = mongoose.model('Comment', commentSchema);
