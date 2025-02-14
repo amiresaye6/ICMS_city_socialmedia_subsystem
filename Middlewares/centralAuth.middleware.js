@@ -27,44 +27,54 @@ exports.centralAuthenticate = (req, res, next) => {
   }
 };
 
-// Helper function to check if the user is allowed to delete the post
-exports.isUserAllowed = async (req, postId, userId = null, commentId = null) => {
-  if (userId) {
-    const user = await User.find({ "centralUsrId": userId });
+// Helper function to check if the user is allowed to perform an action
+exports.isUserAllowed = async (req, postId = null, userId = null, commentId = null) => {
+  try {
+    if (userId) {
+      // Check if the user is allowed to update their own data
+      const user = await User.findOne({ centralUsrId: userId });
 
-    if (!user) {
-      return { error: { status: 404, message: "user not found" } };
+      if (!user) {
+        return { error: { status: 404, message: "User not found" } };
+      }
+
+      if (user.centralUsrId.toString() !== req.user.userId.toString()) {
+        return { error: { status: 403, message: "Forbidden: You are not allowed to perform this action (user update)" } };
+      }
+
+      return { user }; // Return the user if authorized
+    } else if (commentId) {
+      // Check if the user is allowed to update/delete a comment
+      const comment = await Comment.findById(commentId);
+
+      if (!comment) {
+        return { error: { status: 404, message: "Comment not found" } };
+      }
+
+      if (comment.userId.toString() !== req.user.userId.toString()) {
+        return { error: { status: 403, message: "Forbidden: You are not allowed to perform this action (comment update/delete)" } };
+      }
+
+      return { comment }; // Return the comment if authorized
+    } else if (postId) {
+      // Check if the user is allowed to update/delete a post
+      const post = await Post.findById(postId);
+
+      if (!post) {
+        return { error: { status: 404, message: "Post not found" } };
+      }
+
+      if (post.author.toString() !== req.user.userId.toString()) {
+        return { error: { status: 403, message: "Forbidden: You are not allowed to perform this action (post update/delete)" } };
+      }
+
+      return { post }; // Return the post if authorized
+    } else {
+      // If no valid ID is provided
+      return { error: { status: 400, message: "Invalid request: No resource ID provided" } };
     }
-
-    if (user[0].centralUsrId !== req.user.userId) {
-      return { error: { status: 403, message: "Forbidden: You are not allowed to do this action, userUpdate" } };
-    }
-
-    return user;
-  } else if (commentId) {
-    const comment = await Comment.findById(commentId);
-
-    if (!comment) {
-      return { error: { status: 404, message: "comment not found" } };
-    }
-
-    if (comment.userId !== req.user.userId) {
-      return { error: { status: 403, message: "Forbidden: You are not allowed to do this action, commentUpdate" } };
-    }
-
-    return comment;
+  } catch (error) {
+    console.error("Error in isUserAllowed:", error);
+    return { error: { status: 500, message: "Internal server error" } };
   }
-
-
-  const post = await Post.findById(postId);
-
-  if (!post) {
-    return { error: { status: 404, message: "Post not found" } };
-  }
-
-  if (post.author.toString() !== req.user.userId) {
-    return { error: { status: 403, message: "Forbidden: You are not allowed to do this action postUpdate" } };
-  }
-
-  return post;
 };
