@@ -37,6 +37,7 @@ module.exports.centralLogin = async (req, res) => {
             const newUser = new User({
                 centralUsrId: user.value.id,
                 userName: user.value.userName,
+                localUserName: user.value.userName,
                 email: user.value.email,
             });
             await newUser.save();

@@ -16,6 +16,10 @@ const userSchema = new Schema(
             type: String,
             required: true
         },
+        localUserName: {
+            type: String,
+            default: 'user name'
+        },
         email: {
             type: String,
             unique: true,

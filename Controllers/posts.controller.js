@@ -2,37 +2,7 @@ const { validationResult } = require("express-validator");
 const Post = require("../Models/posts.model");
 const User = require("../Models/users.model");
 const mongoose = require("mongoose");
-
-// Helper function to check if the user is allowed to delete the post
-const isUserAllowed = async (req, postId, userId = null) => {
-  if (userId) {
-    const user = await User.find({ "centralUsrId": userId });
-
-    if (!user) {
-      return { error: { status: 404, message: "user not found" } };
-    }
-
-    if (user[0].centralUsrId !== req.user.userId) {
-      console.log(user[0].centralUsrId, req.user.userId);
-
-      return { error: { status: 403, message: "Forbidden: You are not allowed to do this action, userUpdate" } };
-    }
-
-    return user;
-  }
-
-  const post = await Post.findById(postId);
-
-  if (!post) {
-    return { error: { status: 404, message: "Post not found" } };
-  }
-
-  if (post.author.toString() !== req.user.userId) {
-    return { error: { status: 403, message: "Forbidden: You are not allowed to do this action postUpdate" } };
-  }
-
-  return post;
-};
+const { isUserAllowed } = require("../Middlewares/centralAuth.middleware");
 
 // get all posts to-do >> adding pagination to it like 10 posts each time
 exports.getAllPosts = async (req, res) => {
@@ -280,7 +250,6 @@ exports.sharePost = async (req, res) => {
     post.shareList.push(userId);
     post.shareCount += 1;
 
-    
     const result = await isUserAllowed(req, null, userId);
 
     // If an error exists, return the error response
