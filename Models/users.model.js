@@ -57,10 +57,16 @@ const userSchema = new Schema(
         ], // Saved/bookmarked posts
         sharedPosts: [
             {
+            postId: {
                 type: Schema.Types.ObjectId,
                 ref: 'Post'
+            },
+            shareCaption: {
+                type: String,
+                default: ''
             }
-        ], // Shared posts
+            }
+        ], // Shared posts with captions
     },
     {
         timestamps: true

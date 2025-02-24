@@ -166,6 +166,7 @@ exports.addReaction = async (req, res) => {
 exports.sharePost = async (req, res) => {
   try {
     const postId = req.params.postId;
+    const { shareCaption } = req.body;
     const { userId } = req.user;
 
     if (!postId || !userId) {
@@ -190,7 +191,10 @@ exports.sharePost = async (req, res) => {
       return res.status(result.error.status).json({ message: result.error.message });
     }
 
-    await User.updateOne({ centralUsrId: userId }, { $push: { sharedPosts: postId } });
+    await User.updateOne(
+      { centralUsrId: userId },
+      { $push: { sharedPosts: { postId, shareCaption } } }
+    );
     await post.save();
 
     res.status(200).json({
