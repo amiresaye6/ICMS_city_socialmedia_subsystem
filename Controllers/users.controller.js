@@ -125,6 +125,59 @@ module.exports.changeAvatar = async (req, res) => {
     }
 }
 
+module.exports.changeCover = async (req, res) => {
+    try {
+        // Validate Uploaded Media
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({
+                error: 'At least one media file is required'
+            });
+        }
+
+        const media = req.files.map(file => {
+            // Determine the media type (image, video, audio) from mimetype
+            const type = getMediaType(file.mimetype);
+
+            // Validate the type according to the media schema enum
+            if (!['image', 'video', 'audio'].includes(type)) {
+                throw new Error(`Invalid media type detected: ${type}`);
+            }
+
+            // Use the correct file URL, remove "/public" from the path
+            return {
+                type,
+                url: `/public/uploads/${file.filename}` // to be able to send req directly to it.
+            };
+        });
+
+        const { userId } = req.user;
+
+        if (!userId) {
+            return res.status(400).json({ message: "Invalid request, user ID is required" });
+        }
+
+        const result = await isUserAllowed(req, null, userId);
+
+        if (result.error) {
+            return res.status(result.error.status).json({ message: result.error.message });
+        }
+
+        const user = await User.findOneAndUpdate(
+            { centralUsrId: userId },
+            { $set: { coverUrl: media[0].url } },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
 function getMediaType(mimetype) {
     if (mimetype.startsWith('image/')) {
         return 'image';

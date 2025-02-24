@@ -29,6 +29,10 @@ const userSchema = new Schema(
             type: String,
             default: "/public/uploads/default.png"
         }, // Profile picture
+        coverUrl: {
+            type: String,
+            default: "/public/uploads/default.png"
+        },
         bio: {
             type: String,
             default: 'hi there!'
