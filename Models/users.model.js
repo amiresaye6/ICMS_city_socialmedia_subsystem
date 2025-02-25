@@ -7,7 +7,7 @@ const userSchema = new Schema(
             type: String,
             required: true
         },
-        rule: {
+        role: {
             type: String,
             enum: ['user', 'admin', 'superAdmin'],
             default: 'user'
@@ -29,6 +29,10 @@ const userSchema = new Schema(
             type: String,
             default: "/public/uploads/default.png"
         }, // Profile picture
+        coverUrl: {
+            type: String,
+            default: "/public/uploads/default.png"
+        },
         bio: {
             type: String,
             default: 'hi there!'
@@ -53,10 +57,16 @@ const userSchema = new Schema(
         ], // Saved/bookmarked posts
         sharedPosts: [
             {
+            postId: {
                 type: Schema.Types.ObjectId,
                 ref: 'Post'
+            },
+            shareCaption: {
+                type: String,
+                default: ''
             }
-        ], // Shared posts
+            }
+        ], // Shared posts with captions
     },
     {
         timestamps: true

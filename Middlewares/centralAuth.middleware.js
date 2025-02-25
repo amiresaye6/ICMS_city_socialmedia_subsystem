@@ -78,3 +78,37 @@ exports.isUserAllowed = async (req, postId = null, userId = null, commentId = nu
     return { error: { status: 500, message: "Internal server error" } };
   }
 };
+
+
+exports.isUserAdmin = async (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1]; // Extract Bearer token
+  if (!token) {
+    return res.status(401).json({ message: "Access token is required" });
+  }
+
+  try {
+    // Verify token
+    const decoded = jwt.verify(token, CENTRA_JWT_SECRET);
+    const userId = decoded.nameid;
+
+    // Check if the user is an admin
+    const user = await User.findOne({ centralUsrId: userId });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role !== "admin" && user.role !== "superAdmin") {
+      return res.status(403).json({ message: "Forbidden: You are not allowed to perform this action, require admin privileges.", debugOnly: user });
+    }
+
+    req.user = {
+      userId: decoded.nameid,
+      ...decoded
+    }; // Attach decoded token to the request
+    next();
+  } catch (error) {
+    console.error("JWT Error:", error.message);
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
