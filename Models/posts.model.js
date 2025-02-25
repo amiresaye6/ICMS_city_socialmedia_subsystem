@@ -7,6 +7,10 @@ const postSchema = new Schema(
             type: String,
             required: true
         },
+        adminPost: {
+            type: Boolean,
+            default: false
+        },
         availability: {
             type: String,
             enum: ['public', 'private', 'friends', 'specific_groups'],

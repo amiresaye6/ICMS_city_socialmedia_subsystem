@@ -7,7 +7,7 @@ const userSchema = new Schema(
             type: String,
             required: true
         },
-        rule: {
+        role: {
             type: String,
             enum: ['user', 'admin', 'superAdmin'],
             default: 'user'
