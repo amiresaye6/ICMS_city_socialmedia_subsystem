@@ -124,7 +124,7 @@ exports.createPost = async (req, res) => {
 // Create a admin post
 exports.createAdminPost = async (req, res) => {
   try {
-    const { postCaption } = req.body;
+    const { postCaption, tag } = req.body;
 
     if (!postCaption || postCaption.trim() === "") {
       return res.status(400).json({ error: "Post caption is required" });
@@ -153,6 +153,7 @@ exports.createAdminPost = async (req, res) => {
       postCaption: postCaption.trim(),
       adminPost: true,
       author: req.user.userId,
+      tags: tag ? [tag] : [],
       media,
     };
 
