@@ -33,7 +33,7 @@ fetch('http://graduation.amiralsayed.me/api/users', {
         "email": "john@example.com",
         "avatarUrl": "/public/uploads/default.png",
         "bio": "hi there!",
-        "rule": "user",
+        "role": "user",
         "friends": [],
         "posts": [],
         "savedPosts": [],
@@ -47,7 +47,7 @@ fetch('http://graduation.amiralsayed.me/api/users', {
 **Error Response:**
 ```json
 {
-    "message": "No users found"
+    "message": "Internal server error"
 }
 ```
 
@@ -81,7 +81,7 @@ fetch('http://graduation.amiralsayed.me/api/users/me', {
     "email": "john@example.com",
     "avatarUrl": "/public/uploads/default.png",
     "bio": "hi there!",
-    "rule": "user",
+    "role": "user",
     "friends": [],
     "posts": [],
     "savedPosts": [],
@@ -107,11 +107,11 @@ fetch('http://graduation.amiralsayed.me/api/users/me', {
 - **Headers:**
     - `Authorization: Bearer <token>`
 - **URL Parameters:**
-    - `userId` (required) - Valid MongoDB ID
+    - `userId` (required) - Central User ID (string)
 
 **Example:**
 ```javascript
-fetch('http://graduation.amiralsayed.me/api/users/507f1f77bcf86cd799439011', {
+fetch('http://graduation.amiralsayed.me/api/users/user123', {
     headers: {
         'Authorization': 'Bearer your_jwt_token'
     }
@@ -130,7 +130,7 @@ fetch('http://graduation.amiralsayed.me/api/users/507f1f77bcf86cd799439011', {
     "email": "john@example.com",
     "avatarUrl": "/public/uploads/default.png",
     "bio": "hi there!",
-    "rule": "user",
+    "role": "user",
     "friends": [],
     "posts": [],
     "savedPosts": [],
@@ -178,14 +178,20 @@ fetch('http://graduation.amiralsayed.me/api/users/me', {
 **Success Response:**
 ```json
 {
-    "message": "Username updated successfully",
-    "user": {
-        "_id": "507f1f77bcf86cd799439011",
-        "userName": "new_john_doe",
-        "localUserName": "John Doe",
-        "email": "john@example.com",
-        "updatedAt": "2025-02-24T10:05:00Z"
-    }
+    "_id": "507f1f77bcf86cd799439011",
+    "centralUsrId": "user123",
+    "userName": "new_john_doe",
+    "localUserName": "new_john_doe",
+    "email": "john@example.com",
+    "avatarUrl": "/public/uploads/default.png",
+    "bio": "hi there!",
+    "role": "user",
+    "friends": [],
+    "posts": [],
+    "savedPosts": [],
+    "sharedPosts": [],
+    "createdAt": "2025-02-24T10:00:00Z",
+    "updatedAt": "2025-02-24T10:05:00Z"
 }
 ```
 
@@ -206,7 +212,7 @@ fetch('http://graduation.amiralsayed.me/api/users/me', {
     - `Authorization: Bearer <token>`
     - `Content-Type: multipart/form-data`
 - **Body Parameters:**
-    - `avatar` (required) - File (image)
+    - `avatar` (required) - File (image, video, or audio)
 
 **Example:**
 ```javascript
@@ -227,19 +233,88 @@ fetch('http://graduation.amiralsayed.me/api/users/me/avatar', {
 **Success Response:**
 ```json
 {
-    "message": "Avatar updated successfully",
-    "user": {
-        "_id": "507f1f77bcf86cd799439011",
-        "userName": "john_doe",
-        "avatarUrl": "/public/uploads/1733839688988-avatar.jpg",
-        "updatedAt": "2025-02-24T10:05:00Z"
-    }
+    "_id": "507f1f77bcf86cd799439011",
+    "centralUsrId": "user123",
+    "userName": "john_doe",
+    "localUserName": "John Doe",
+    "email": "john@example.com",
+    "avatarUrl": "/public/uploads/1733839688988-avatar.jpg",
+    "bio": "hi there!",
+    "role": "user",
+    "friends": [],
+    "posts": [],
+    "savedPosts": [],
+    "sharedPosts": [],
+    "createdAt": "2025-02-24T10:00:00Z",
+    "updatedAt": "2025-02-24T10:05:00Z"
 }
 ```
 
 **Error Response:**
 ```json
 {
-    "message": "No file uploaded"
+    "message": "At least one media file is required"
 }
 ```
+
+---
+
+## 6. Change Cover
+
+- **Endpoint:** `/me/cover`
+- **Method:** `PUT`
+- **Headers:**
+    - `Authorization: Bearer <token>`
+    - `Content-Type: multipart/form-data`
+- **Body Parameters:**
+    - `cover` (required) - File (image, video, or audio)
+
+**Example:**
+```javascript
+const formData = new FormData();
+formData.append('cover', fileInput.files[0]);
+
+fetch('http://graduation.amiralsayed.me/api/users/me/cover', {
+    method: 'PUT',
+    headers: {
+        'Authorization': 'Bearer your_jwt_token'
+    },
+    body: formData
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+**Success Response:**
+```json
+{
+    "_id": "507f1f77bcf86cd799439011",
+    "centralUsrId": "user123",
+    "userName": "john_doe",
+    "localUserName": "John Doe",
+    "email": "john@example.com",
+    "avatarUrl": "/public/uploads/default.png",
+    "coverUrl": "/public/uploads/1733839688988-cover.jpg",
+    "bio": "hi there!",
+    "role": "user",
+    "friends": [],
+    "posts": [],
+    "savedPosts": [],
+    "sharedPosts": [],
+    "createdAt": "2025-02-24T10:00:00Z",
+    "updatedAt": "2025-02-24T10:05:00Z"
+}
+```
+
+**Error Response:**
+```json
+{
+    "message": "At least one media file is required"
+}
+```
+
+---
+
+### Notes:
+1. **Authentication**: All endpoints require a valid JWT token obtained from the central authentication system (`/api/auth/login`).
+2. **Error Handling**: Common error responses include `401 Unauthorized` (invalid/missing token), `403 Forbidden` (insufficient permissions), `404 Not Found` (resource not found), and `500 Internal Server Error` (server issues).
