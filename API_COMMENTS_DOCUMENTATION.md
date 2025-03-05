@@ -28,7 +28,7 @@ fetch('http://graduation.amiralsayed.me/api/comments', {
     {
         "_id": "507f1f77bcf86cd799439011",
         "postId": "507f1f77bcf86cd799439012",
-        "userId": "507f1f77bcf86cd799439013",
+        "userId": "user123",
         "content": "Great post!",
         "parentCommentId": null,
         "replies": [],
@@ -74,12 +74,13 @@ fetch('http://graduation.amiralsayed.me/api/comments/post/507f1f77bcf86cd7994390
     {
         "_id": "507f1f77bcf86cd799439011",
         "postId": "507f1f77bcf86cd799439012",
-        "userId": "507f1f77bcf86cd799439013",
+        "userId": "user123",
         "content": "Nice one!",
         "parentCommentId": null,
         "replies": [],
         "reactions": [],
-        "createdAt": "2025-02-24T10:00:00Z"
+        "createdAt": "2025-02-24T10:00:00Z",
+        "updatedAt": "2025-02-24T10:00:00Z"
     }
 ]
 ```
@@ -130,12 +131,13 @@ fetch('http://graduation.amiralsayed.me/api/comments/post/507f1f77bcf86cd7994390
     "comment": {
         "_id": "507f1f77bcf86cd799439011",
         "postId": "507f1f77bcf86cd799439012",
-        "userId": "507f1f77bcf86cd799439013",
+        "userId": "user123",
         "content": "This is a comment!",
         "parentCommentId": null,
         "replies": [],
         "reactions": [],
-        "createdAt": "2025-02-24T10:00:00Z"
+        "createdAt": "2025-02-24T10:00:00Z",
+        "updatedAt": "2025-02-24T10:00:00Z"
     }
 }
 ```
@@ -183,7 +185,13 @@ fetch('http://graduation.amiralsayed.me/api/comments/507f1f77bcf86cd799439011', 
     "message": "Comment updated successfully",
     "comment": {
         "_id": "507f1f77bcf86cd799439011",
+        "postId": "507f1f77bcf86cd799439012",
+        "userId": "user123",
         "content": "Updated comment text",
+        "parentCommentId": null,
+        "replies": [],
+        "reactions": [],
+        "createdAt": "2025-02-24T10:00:00Z",
         "updatedAt": "2025-02-24T10:05:00Z"
     }
 }
@@ -225,7 +233,14 @@ fetch('http://graduation.amiralsayed.me/api/comments/507f1f77bcf86cd799439011', 
     "message": "Comment deleted successfully",
     "comment": {
         "_id": "507f1f77bcf86cd799439011",
-        "content": "Updated comment text"
+        "postId": "507f1f77bcf86cd799439012",
+        "userId": "user123",
+        "content": "Updated comment text",
+        "parentCommentId": null,
+        "replies": [],
+        "reactions": [],
+        "createdAt": "2025-02-24T10:00:00Z",
+        "updatedAt": "2025-02-24T10:05:00Z"
     }
 }
 ```
@@ -249,11 +264,11 @@ fetch('http://graduation.amiralsayed.me/api/comments/507f1f77bcf86cd799439011', 
 - **URL Parameters:**
     - `commentId` (required) - Valid MongoDB ID
 - **Body:**
-    ```json
-    {
-        "impressionType": "like"
-    }
-    ```
+```json
+{
+    "impressionType": "like"
+}
+```
     Valid reaction types: `like`, `love`, `care`, `laugh`, `sad`, `hate`
 
 **Example:**
@@ -278,12 +293,19 @@ fetch('http://graduation.amiralsayed.me/api/comments/507f1f77bcf86cd799439011/re
     "message": "Reaction updated successfully",
     "comment": {
         "_id": "507f1f77bcf86cd799439011",
+        "postId": "507f1f77bcf86cd799439012",
+        "userId": "user123",
+        "content": "Updated comment text",
+        "parentCommentId": null,
+        "replies": [],
         "reactions": [
             {
-                "userId": "507f1f77bcf86cd799439013",
+                "userId": "user123",
                 "impressionType": "love"
             }
-        ]
+        ],
+        "createdAt": "2025-02-24T10:00:00Z",
+        "updatedAt": "2025-02-24T10:05:00Z"
     },
     "reactionCount": 1
 }
@@ -295,3 +317,9 @@ fetch('http://graduation.amiralsayed.me/api/comments/507f1f77bcf86cd799439011/re
     "message": "Invalid reaction type"
 }
 ```
+
+---
+
+### Notes:
+1. **Authentication**: All endpoints require a valid JWT token obtained from the central authentication system (`/api/auth/login`).
+2. **Error Handling**: Common error responses include `401 Unauthorized` (invalid/missing token), `403 Forbidden` (insufficient permissions), `404 Not Found` (resource not found), and `500 Internal Server Error` (server issues).

@@ -26,6 +26,7 @@ fetch('http://graduation.amiralsayed.me/api/posts?page=2&limit=5', {
 **Success Response:**
 ```json
 {
+    "message": "Posts retrieved successfully",
     "pagination": {
         "totalPosts": 100,
         "totalPages": 20,
@@ -77,7 +78,10 @@ fetch('http://graduation.amiralsayed.me/api/posts', {
             "url": "/public/uploads/1733839688988-548819799.jpg"
         }
     ],
-    "author": "507f1f77bcf86cd799439011"
+    "author": "user123",
+    "_id": "507f1f77bcf86cd799439011",
+    "createdAt": "2025-02-24T10:00:00Z",
+    "updatedAt": "2025-02-24T10:00:00Z"
 }
 ```
 
@@ -91,11 +95,11 @@ fetch('http://graduation.amiralsayed.me/api/posts', {
 - **URL Parameters:**
     - `postId` (required) - Valid MongoDB ID
 - **Body:**
-    ```json
-    {
-        "reactionType": "like"
-    }
-    ```
+```json
+{
+    "reactionType": "like"
+}
+```
     Valid reaction types: `like`, `love`, `care`, `laugh`, `sad`, `hate`
 
 **Example:**
@@ -120,9 +124,20 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/react
     "message": "Reaction processed successfully",
     "post": {
         "impressionsCount": {
-            "love": 1
-            // ...other reaction counts
-        }
+            "like": 0,
+            "love": 1,
+            "care": 0,
+            "laugh": 0,
+            "sad": 0,
+            "hate": 0,
+            "total": 1
+        },
+        "impressionList": [
+            {
+                "userId": "user123",
+                "impressionType": "love"
+            }
+        ]
     }
 }
 ```
@@ -154,7 +169,7 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/share
     "message": "User added to the share list successfully",
     "post": {
         "shareCount": 5,
-        "shareList": ["userId1", "userId2", ...]
+        "shareList": ["userId1", "userId2", "user123"]
     }
 }
 ```
@@ -169,11 +184,11 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/share
 - **URL Parameters:**
     - `postId` (required) - Valid MongoDB ID
 - **Body:**
-    ```json
-    {
-        "newStatus": "archived"
-    }
-    ```
+```json
+{
+    "newStatus": "archived"
+}
+```
     Valid statuses: `active`, `archived`, `deleted`
 
 **Example:**
@@ -237,11 +252,11 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011', {
 - **Headers:**
     - `Authorization: Bearer <token>`
 - **URL Parameters:**
-    - `userId` (required) - Valid MongoDB ID
+    - `userId` (required) - Central User ID (string)
 
 **Example:**
 ```javascript
-fetch('http://graduation.amiralsayed.me/api/posts/user/507f1f77bcf86cd799439011', {
+fetch('http://graduation.amiralsayed.me/api/posts/user/user123', {
     headers: {
         'Authorization': 'Bearer your_jwt_token'
     }
@@ -259,6 +274,7 @@ fetch('http://graduation.amiralsayed.me/api/posts/user/507f1f77bcf86cd799439011'
     ]
 }
 ```
+
 ## 8. Update Post Caption
 
 - **Endpoint:** `/:postId/caption`
@@ -269,11 +285,11 @@ fetch('http://graduation.amiralsayed.me/api/posts/user/507f1f77bcf86cd799439011'
 - **URL Parameters:**
     - `postId` (required) - Valid MongoDB ID
 - **Body:**
-    ```json
-    {
-        "newCaption": "Updated caption for the post"
-    }
-    ```
+```json
+{
+    "newCaption": "Updated caption for the post"
+}
+```
 
 **Example:**
 ```javascript
@@ -294,7 +310,7 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/capti
 **Success Response:**
 ```json
 {
-    "message": "Post caption updated successfully",
+    "message": "Caption updated successfully",
     "post": {
         "postCaption": "Updated caption for the post"
     }
@@ -311,11 +327,11 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/capti
 - **URL Parameters:**
     - `postId` (required) - Valid MongoDB ID
 - **Body:**
-    ```json
-    {
-        "newTag": "CityImprovement"
-    }
-    ```
+```json
+{
+    "newTag": "CityImprovement"
+}
+```
 
 **Example:**
 ```javascript
@@ -353,12 +369,12 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/tags'
 - **URL Parameters:**
     - `postId` (required) - Valid MongoDB ID
 - **Body:**
-    ```json
-    {
-        "oldTag": "CityImprovement",
-        "newTag": "UrbanDevelopment"
-    }
-    ```
+```json
+{
+    "oldTag": "CityImprovement",
+    "newTag": "UrbanDevelopment"
+}
+```
 
 **Example:**
 ```javascript
@@ -397,11 +413,11 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/tags'
 - **URL Parameters:**
     - `postId` (required) - Valid MongoDB ID
 - **Body:**
-    ```json
-    {
-        "tagToDelete": "UrbanDevelopment"
-    }
-    ```
+```json
+{
+    "tagToDelete": "UrbanDevelopment"
+}
+```
 
 **Example:**
 ```javascript
@@ -456,7 +472,7 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/saves
     "message": "User added to the save list successfully",
     "post": {
         "saveCount": 3,
-        "saveList": ["userId1", "userId2", "userId3"]
+        "saveList": ["userId1", "userId2", "user123"]
     }
 }
 ```
@@ -471,11 +487,11 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/saves
 - **URL Parameters:**
     - `postId` (required) - Valid MongoDB ID
 - **Body:**
-    ```json
-    {
-        "newAvailability": "friends"
-    }
-    ```
+```json
+{
+    "newAvailability": "friends"
+}
+```
     Valid availability options: `public`, `private`, `friends`, `specific_groups`
 
 **Example:**
@@ -497,7 +513,7 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/avail
 **Success Response:**
 ```json
 {
-    "message": "Post availability updated successfully",
+    "message": "Availability updated successfully",
     "post": {
         "availability": "friends"
     }
@@ -536,15 +552,18 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011', {
                 "url": "/public/uploads/1733839688988-548819799.jpg"
             }
         ],
-        "author": "507f1f77bcf86cd799439011"
+        "author": "user123",
+        "_id": "507f1f77bcf86cd799439011",
+        "createdAt": "2025-02-24T10:00:00Z",
+        "updatedAt": "2025-02-24T10:00:00Z"
     }
 }
 ```
 
 ## 15. Delete Share
 
-- **Endpoint:** `/:postId/shares`
-- **Method:** `DELETE`
+- **Endpoint:** `/:postId/unshare`
+- **Method:** `POST`
 - **Headers:**
     - `Authorization: Bearer <token>`
 - **URL Parameters:**
@@ -552,8 +571,8 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011', {
 
 **Example:**
 ```javascript
-fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/shares', {
-    method: 'DELETE',
+fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/unshare', {
+    method: 'POST',
     headers: {
         'Authorization': 'Bearer your_jwt_token'
     }
@@ -565,7 +584,11 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/share
 **Success Response:**
 ```json
 {
-    "message": "Share deleted successfully"
+    "message": "User removed from the share list successfully",
+    "post": {
+        "shareCount": 4,
+        "shareList": ["userId1", "userId2"]
+    }
 }
 ```
 
@@ -587,4 +610,4 @@ fetch('http://graduation.amiralsayed.me/api/posts/507f1f77bcf86cd799439011/share
 | /:postId/saves        | POST   | Save a post                  |
 | /:postId/availability | PUT    | Update post availability     |
 | /:postId              | GET    | Get post by ID               |
-| /:postId/shares       | DELETE | Delete a share               |
+| /:postId/unshare      | POST   | Delete a share               |
