@@ -1,7 +1,5 @@
-const jwt = require("jsonwebtoken");
 const User = require("../Models/users.model");
 const { isUserAllowed } = require("../Middlewares/centralAuth.middleware");
-const Token = require("../Models/tokens.model");
 const { validationResult } = require("express-validator")
 
 module.exports.getAllUsers = async (req, res) => {
@@ -88,7 +86,7 @@ module.exports.changeBio = async (req, res) => {
         }
 
         const user = await User.findOneAndUpdate(
-            { centralUsrId: userId},
+            { centralUsrId: userId },
             { $set: { bio: newBio } },
             { new: true }
         );
@@ -206,6 +204,64 @@ module.exports.changeCover = async (req, res) => {
         res.json(user);
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+}
+
+module.exports.searchUser = async (req, res) => {
+    try {
+        const { q } = req.query;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        if (!q || q.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: "Search query is required"
+            });
+        }
+
+        // Create search regex once
+        const searchRegex = new RegExp(q, 'i');
+
+        const [users, total] = await Promise.all([
+            User.find({
+                $or: [
+                    { userName: searchRegex },
+                    { localUserName: searchRegex },
+                    { email: searchRegex }
+                ]
+            })
+                .select('userName localUserName bio centralUsrId avatarUrl')
+                .sort({ userName: 1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+
+            User.countDocuments({
+                $or: [
+                    { userName: searchRegex },
+                    { localUserName: searchRegex },
+                    { email: searchRegex }
+                ]
+            })
+        ]);
+
+        res.json({
+            success: true,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            data: users
+        });
+    } catch (error) {
+        console.error('Search error:', error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to search users",
+            error: error.message
+        });
     }
 }
 
