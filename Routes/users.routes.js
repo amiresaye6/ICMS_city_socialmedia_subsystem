@@ -4,6 +4,7 @@ const usersController = require("../Controllers/users.controller");
 const upload = require('../Middlewares/fileUpload.middleware');
 
 router.get('/', centralAuthMiddleware.centralAuthenticate, usersController.getAllUsers);
+router.get('/search', centralAuthMiddleware.centralAuthenticate, usersController.searchUser);
 router.get('/me', centralAuthMiddleware.centralAuthenticate, usersController.getMyUser);
 router.get('/:userId', centralAuthMiddleware.centralAuthenticate, usersController.getUserById);
 router.put('/me', centralAuthMiddleware.centralAuthenticate, usersController.changeUserName);

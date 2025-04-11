@@ -381,3 +381,60 @@ fetch('http://graduation.amiralsayed.me/api/users/me/bio', {
     "message": "Forbidden: You are not allowed to perform this action"
 }
 ```
+## 8. Search Users
+
+- **Endpoint:** `/search`
+- **Method:** `GET`
+- **Headers:**
+    - `Authorization: Bearer <token>`
+- **Query Parameters:**
+    - `q` (required) - Search query for userName, localUserName, or email (string)
+    - `page` (optional) - Page number for pagination (integer, default: 1)
+    - `limit` (optional) - Number of results per page (integer, default: 10)
+
+**Example:**
+```javascript
+fetch('http://graduation.amiralsayed.me/api/users/search?q=john&page=1&limit=10', {
+    headers: {
+        'Authorization': 'Bearer your_jwt_token'
+    }
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+**Success Response:**
+```json
+{
+    "success": true,
+    "total": 25,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 3,
+    "data": [
+        {
+            "_id": "507f1f77bcf86cd799439011",
+            "userName": "john_doe",
+            "localUserName": "John Doe",
+            "bio": "hi there!",
+            "centralUsrId": "user123",
+            "avatarUrl": "/public/uploads/default.png"
+        }
+    ]
+}
+```
+
+**Error Responses:**
+```json
+{
+    "success": false,
+    "message": "Search query is required"
+}
+```
+```json
+{
+    "success": false,
+    "message": "Failed to search users",
+    "error": "Specific error message"
+}
+```

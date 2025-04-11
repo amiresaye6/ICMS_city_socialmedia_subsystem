@@ -57,19 +57,22 @@ const userSchema = new Schema(
         ], // Saved/bookmarked posts
         sharedPosts: [
             {
-            postId: {
-                type: Schema.Types.ObjectId,
-                ref: 'Post'
-            },
-            shareCaption: {
-                type: String,
-                default: ''
-            }
+                postId: {
+                    type: Schema.Types.ObjectId,
+                    ref: 'Post'
+                },
+                shareCaption: {
+                    type: String,
+                    default: ''
+                }
             }
         ], // Shared posts with captions
     },
     {
         timestamps: true
     });
+
+// For future: Add text index if you want faster searches
+// userSchema.index({ userName: 'text', localUserName: 'text' });
 
 module.exports = mongoose.model('User', userSchema);
