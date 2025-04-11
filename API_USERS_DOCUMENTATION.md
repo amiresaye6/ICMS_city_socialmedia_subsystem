@@ -318,3 +318,66 @@ fetch('http://graduation.amiralsayed.me/api/users/me/cover', {
 ### Notes:
 1. **Authentication**: All endpoints require a valid JWT token obtained from the central authentication system (`/api/auth/login`).
 2. **Error Handling**: Common error responses include `401 Unauthorized` (invalid/missing token), `403 Forbidden` (insufficient permissions), `404 Not Found` (resource not found), and `500 Internal Server Error` (server issues).
+
+## 7. Change Bio
+
+- **Endpoint:** `/me/bio`
+- **Method:** `PUT`
+- **Headers:**
+    - `Authorization: Bearer <token>`
+    - `Content-Type: application/json`
+- **Body Parameters:**
+    - `newBio` (required) - String
+
+**Example:**
+```javascript
+fetch('http://graduation.amiralsayed.me/api/users/me/bio', {
+    method: 'PUT',
+    headers: {
+        'Authorization': 'Bearer your_jwt_token',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        newBio: 'New bio description'
+    })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+**Success Response:**
+```json
+{
+    "_id": "507f1f77bcf86cd799439011",
+    "centralUsrId": "user123",
+    "userName": "john_doe",
+    "localUserName": "John Doe",
+    "email": "john@example.com",
+    "avatarUrl": "/public/uploads/default.png",
+    "bio": "New bio description",
+    "role": "user",
+    "friends": [],
+    "posts": [],
+    "savedPosts": [],
+    "sharedPosts": [],
+    "createdAt": "2025-02-24T10:00:00Z",
+    "updatedAt": "2025-02-24T10:05:00Z"
+}
+```
+
+**Error Response:**
+```json
+{
+    "message": "Invalid request, user ID and user newBio are required"
+}
+```
+```json
+{
+    "message": "User not found"
+}
+```
+```json
+{
+    "message": "Forbidden: You are not allowed to perform this action"
+}
+```
