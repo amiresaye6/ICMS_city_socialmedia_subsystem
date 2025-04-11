@@ -9,6 +9,7 @@ router.get('/:userId', centralAuthMiddleware.centralAuthenticate, usersControlle
 router.put('/me', centralAuthMiddleware.centralAuthenticate, usersController.changeUserName);
 router.put('/me/avatar', centralAuthMiddleware.centralAuthenticate, upload.array("avatar", 1), usersController.changeAvatar);
 router.put('/me/cover', centralAuthMiddleware.centralAuthenticate, upload.array("cover", 1), usersController.changeCover);
+router.put('/me/bio', centralAuthMiddleware.centralAuthenticate, usersController.changeBio);
 
 
 module.exports = router;
