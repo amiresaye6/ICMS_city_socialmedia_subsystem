@@ -72,6 +72,38 @@ module.exports.changeUserName = async (req, res) => {
     }
 }
 
+module.exports.changeBio = async (req, res) => {
+    try {
+        const { userId } = req.user;
+        const { newBio } = req.body;
+
+        if (!userId || !newBio) {
+            return res.status(400).json({ message: "Invalid request, user ID and user newBio are required" });
+        }
+
+        const result = await isUserAllowed(req, null, userId);
+
+        if (result.error) {
+            return res.status(result.error.status).json({ message: result.error.message });
+        }
+        console.log(result)
+
+        const user = await User.findOneAndUpdate(
+            { centralUsrId: userId},
+            { $set: { bio: newBio } },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
 module.exports.changeAvatar = async (req, res) => {
     try {
         // Validate Uploaded Media
