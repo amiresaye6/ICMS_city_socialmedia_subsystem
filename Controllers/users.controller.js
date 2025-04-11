@@ -86,7 +86,6 @@ module.exports.changeBio = async (req, res) => {
         if (result.error) {
             return res.status(result.error.status).json({ message: result.error.message });
         }
-        console.log(result)
 
         const user = await User.findOneAndUpdate(
             { centralUsrId: userId},
