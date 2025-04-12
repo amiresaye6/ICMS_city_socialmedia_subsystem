@@ -438,3 +438,97 @@ fetch('http://graduation.amiralsayed.me/api/users/search?q=john&page=1&limit=10'
     "error": "Specific error message"
 }
 ```
+
+## 9. Change User Role
+
+- **Endpoint:** `/changeRole`
+- **Method:** `POST`
+- **Headers:**
+    - `Authorization: Bearer <token>`
+    - `Content-Type: application/json`
+- **Body Parameters:**
+    - `idToChange` (required) - Central User ID (string)
+    - `newRole` (required) - New role for the user (string, must be one of: `user`, `admin`)
+
+**Example:**
+```javascript
+fetch('http://graduation.amiralsayed.me/api/users/changeRole', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer your_jwt_token',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        idToChange: 'user123',
+        newRole: 'admin'
+    })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+**Success Response:**
+```json
+{
+    "success": true,
+    "message": "User role successfully updated to admin",
+    "user": {
+        "_id": "507f1f77bcf86cd799439011",
+        "centralUsrId": "user123",
+        "userName": "john_doe",
+        "localUserName": "John Doe",
+        "email": "john@example.com",
+        "avatarUrl": "/public/uploads/default.png",
+        "bio": "hi there!",
+        "role": "admin",
+        "friends": [],
+        "posts": [],
+        "savedPosts": [],
+        "sharedPosts": [],
+        "createdAt": "2025-02-24T10:00:00Z",
+        "updatedAt": "2025-02-24T10:05:00Z"
+    }
+}
+```
+
+**Error Responses:**
+```json
+{
+    "success": false,
+    "message": "User ID is required"
+}
+```
+```json
+{
+    "success": false,
+    "message": "New role is required"
+}
+```
+```json
+{
+    "success": false,
+    "message": "Invalid role value",
+    "validRoles": ["user", "admin"]
+}
+```
+```json
+{
+    "success": false,
+    "message": "You are not allowed to perform this action (user update) to this user"
+}
+```
+```json
+{
+    "success": false,
+    "message": "User not found with the provided ID"
+}
+```
+```json
+{
+    "success": false,
+    "message": "Failed to change user role",
+    "error": "Specific error message"
+}
+```
+
+---

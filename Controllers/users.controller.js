@@ -265,6 +265,63 @@ module.exports.searchUser = async (req, res) => {
     }
 }
 
+module.exports.changeUserRole = async (req, res) => {
+    try {
+        const { idToChange, newRole } = req.body;
+
+        if (!idToChange || idToChange.trim() === '') {
+            return res.status(400).json({ success: false, message: "User ID is required" });
+        }
+
+        if (!newRole || newRole.trim() === '') {
+            return res.status(400).json({ success: false, message: "New role is required" });
+        }
+
+        const validRoles = ['user', 'admin'];
+        if (!validRoles.includes(newRole)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid role value",
+                validRoles
+            });
+        }
+
+        const userRole = await User.findOne({ centralUsrId: idToChange });
+        if (userRole.role === "superAdmin") {
+            return res.status(403).json({
+                success: false,
+                message: "You are not allowed to perform this action (user update) to this user"
+            });
+        }
+
+        const user = await User.findOneAndUpdate(
+            { centralUsrId: idToChange },
+            { $set: { role: newRole } },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found with the provided ID"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `User role successfully updated to ${newRole}`,
+            user
+        });
+    } catch (error) {
+        console.error("Error changing user role:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to change user role",
+            error: error.message
+        });
+    }
+}
+
 function getMediaType(mimetype) {
     if (mimetype.startsWith('image/')) {
         return 'image';
