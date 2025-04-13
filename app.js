@@ -30,8 +30,8 @@ app.use(helmet());
 //     max: 100, // Limit each IP to 100 requests per window
 // });
 // app.use(limiter);
-app.use(xss());
-app.use(compression());
+// app.use(xss());
+// app.use(compression());
 
 // Routes section
 app.use("/api/posts", postsRoutes);
