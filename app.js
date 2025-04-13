@@ -25,13 +25,13 @@ app.use('/public/uploads', express.static(path.join(__dirname, 'public/uploads')
 app.use(cors());                            // Enable CORS, this one for deployment reasons to access the api from any ware.
 app.use(morgan('dev'));                     // Log HTTP requests, for debugging and logging
 app.use(helmet());
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per window
-});
-app.use(limiter);
-app.use(xss());
-app.use(compression());
+// const limiter = rateLimit({
+//     windowMs: 15 * 60 * 1000, // 15 minutes
+//     max: 100, // Limit each IP to 100 requests per window
+// });
+// app.use(limiter);
+// app.use(xss());
+// app.use(compression());
 
 // Routes section
 app.use("/api/posts", postsRoutes);
