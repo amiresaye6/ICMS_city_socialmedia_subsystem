@@ -22,6 +22,7 @@ exports.getAllPosts = async (req, res) => {
     let posts;
     if (scope === "admin" || scope === "superAdmin") {
       posts = await Post.find({ adminPost: true })
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
 
@@ -34,10 +35,12 @@ exports.getAllPosts = async (req, res) => {
       // }));
     } else if (scope === "user") {
       posts = await Post.find({ adminPost: false })
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
     } else {
       posts = await Post.find()
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
     }
