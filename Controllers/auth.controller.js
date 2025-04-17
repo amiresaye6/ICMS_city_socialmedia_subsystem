@@ -33,7 +33,7 @@ module.exports.login = async (req, res) => {
         }
 
         // Generate JWT
-        const token = jwt.sign(
+        const accessToken = jwt.sign(
             {
                 userId: user._id,
                 role: user.role, // Assuming `role` is a field in the User model (e.g., 'user', 'admin')
@@ -42,13 +42,23 @@ module.exports.login = async (req, res) => {
             { expiresIn: "15m" } // Token expiration time
         );
 
+        const refreshToken = jwt.sign(
+            { userId: user._id },
+            process.env.REFRESH_TOKEN_SECRET,
+            { expiresIn: '7d' }
+        );
         // Store the token in the database
-        await Token.create({ token, userId: user._id });
+        await Token.create([
+            { token: accessToken, userId: user._id, type: 'access' },
+            { token: refreshToken, userId: user._id, type: 'refresh' }
+        ]);
+
 
         // Respond with the token and user info
         res.status(200).json({
             message: "Login successful",
-            token,
+            accessToken,
+            refreshToken,
             user: {
                 id: user._id,
                 userName: user.userName,
@@ -128,6 +138,34 @@ module.exports.signup = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+module.exports.refreshToken = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) return res.status(401).json({ message: "No refresh token provided" });
+
+        const storedToken = await Token.findOne({ token: refreshToken, type: 'refresh' });
+        if (!storedToken) return res.status(403).json({ message: "Invalid refresh token" });
+
+        jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, decoded) => {
+            if (err) return res.status(403).json({ message: "Invalid token" });
+            await Token.deleteOne({ token: refreshToken, type: 'refresh' }); // to delete refresh token before create new one
+
+            const newAccessToken = jwt.sign(
+                { userId: decoded.userId },
+                process.env.JWT_SECRET,
+                { expiresIn: '15m' }
+            );
+            
+            await Token.create({ token: newAccessToken, userId: decoded.userId, type: 'access' });
+
+            res.status(200).json({ accessToken: newAccessToken });
+        });
+
+    } catch (error) {
+        console.error("Error during token refresh:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
 
 module.exports.logout = async (req, res) => {
     try {
@@ -144,7 +182,7 @@ module.exports.logout = async (req, res) => {
         if (!deletedToken) {
             return res.status(400).json({ message: "Token not found or already logged out" });
         }
-
+        
         res.status(200).json({ message: "Logout successful" });
     } catch (error) {
         console.error("Error during logout:", error);
