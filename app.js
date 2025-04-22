@@ -37,6 +37,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/auth", centralAuthRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/conversations", conversationRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 handleSocketConnection(io); //webSocket chat connection
 

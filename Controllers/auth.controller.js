@@ -138,6 +138,7 @@ module.exports.signup = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
 module.exports.refreshToken = async (req, res) => {
     try {
         const { refreshToken } = req.body;
@@ -148,17 +149,28 @@ module.exports.refreshToken = async (req, res) => {
 
         jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, decoded) => {
             if (err) return res.status(403).json({ message: "Invalid token" });
-            await Token.deleteOne({ token: refreshToken, type: 'refresh' }); // to delete refresh token before create new one
+            await Token.deleteOne({ token: refreshToken, type: 'refresh' }); // delete old refresh token
 
+            // Generate a new access token
             const newAccessToken = jwt.sign(
                 { userId: decoded.userId },
                 process.env.JWT_SECRET,
-                { expiresIn: '15m' }
+                { expiresIn: '30m' }
             );
-            
-            await Token.create({ token: newAccessToken, userId: decoded.userId, type: 'access' });
 
-            res.status(200).json({ accessToken: newAccessToken });
+            // Create a new refresh token and store it
+            const newRefreshToken = jwt.sign(
+                { userId: decoded.userId },
+                process.env.REFRESH_TOKEN_SECRET,
+                { expiresIn: '7d' } // Expiry time for refresh token
+            );
+
+            // Store both new tokens (Access & Refresh)
+            await Token.create({ token: newAccessToken, userId: decoded.userId, type: 'access' });
+            await Token.create({ token: newRefreshToken, userId: decoded.userId, type: 'refresh' });
+
+            // Respond with new tokens
+            res.status(200).json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
         });
 
     } catch (error) {

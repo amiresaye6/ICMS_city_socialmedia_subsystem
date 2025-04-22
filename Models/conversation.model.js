@@ -3,7 +3,9 @@ const ConversationSchema = new mongoose.Schema(
   {
     // Array of participant user IDs (at least 2 users are required)
     participants: {
-      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }],
+      type: [{ type: String,
+         ref: "User", 
+         required: true }],
       validate: {
         validator: function (participants) {
           return participants.length >= 2; // Ensures at least 2 participants
@@ -11,13 +13,15 @@ const ConversationSchema = new mongoose.Schema(
         message: "A conversation must have at least 2 participants.",
       },
     },
-    mutedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    mutedUsers: [{
+       type: String, 
+          ref: "User" }],
     
     archivedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     // Stores the last message of the conversation (optional)
     lastMessage: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Message",
       default: null, // Stores the latest message ID instead of text for better consistency
     },

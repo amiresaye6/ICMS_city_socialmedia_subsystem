@@ -8,52 +8,76 @@ const Message = require("../Models/message.model");
  */
 module.exports.getUserConversations = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { userId } = req.user; // Use userId from the JWT token instead of req.params
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
+    // Validate userId format
+    const isValidUserId = mongoose.Types.ObjectId.isValid(userId);
+    if (!isValidUserId) {
       return res.status(400).json({ error: "Invalid user ID" });
     }
 
-    const conversations = await Conversation.find({ participants: userId })
-      .populate("participants", "username email avatar")
-      .sort({ updatedAt: -1 });
+    // Start aggregation pipeline to fetch user conversations
+    const conversations = await Conversation.aggregate([
+      // Step 1: Match conversations where the userId is one of the participants
+      { $match: { participants: userId } },
 
-    const Conversations = await Promise.all(
-      conversations.map(async (conversation) => {
-        const lastMessage = await Message.findOne({ conversation: conversation._id })
-          .sort({ createdAt: -1 })
-          .select("content sender isRead createdAt");
+      // Step 2: Lookup the last message for each conversation
+      { $lookup: {
+        from: 'messages', // The 'messages' collection
+        let: { conversationId: '$_id' }, // Pass the current conversationId for comparison
+        pipeline: [
+          { $match: { $expr: { $eq: ['$conversation', '$$conversationId'] } } },
+          { $sort: { createdAt: -1 } }, // Sort by creation date (latest message first)
+          { $limit: 1 }, // Limit to the latest message
+          { $project: { content: 1, sender: 1, isRead: 1, createdAt: 1 } } // Project relevant fields
+        ],
+        as: 'lastMessage' // Store the last message in the `lastMessage` field
+      }},
+      
+      // Step 3: Unwind the 'lastMessage' array to get the last message object
+      { $unwind: { path: '$lastMessage', preserveNullAndEmptyArrays: true } },
 
-        const unreadMessagesCount = await Message.countDocuments({
-          conversation: conversation._id,
-          recipient: userId,
-          isRead: false,
-        });
+      // Step 4: Lookup to count unread messages for the user
+      { $lookup: {
+        from: 'messages',
+        let: { conversationId: '$_id' },
+        pipeline: [
+          { $match: { $expr: { $and: [{ $eq: ['$conversation', '$$conversationId'] }, { $eq: ['$recipient', userId] }, { $eq: ['$isRead', false] }] } } },
+          { $count: 'unreadMessages' } // Count unread messages
+        ],
+        as: 'unreadMessagesCount'
+      }},
 
-        return {
-          _id: conversation._id,
-          participants: conversation.participants,
-          lastMessage: lastMessage || null,
-          unreadMessages: unreadMessagesCount,
-          updatedAt: conversation.updatedAt,
-        };
-      })
-    );
+      // Step 5: Unwind the 'unreadMessagesCount' array to get the count
+      { $unwind: { path: '$unreadMessagesCount', preserveNullAndEmptyArrays: true } },
 
-    res.status(200).json(Conversations);
+      // Step 6: Project the final output, ensuring the unread message count is 0 if no unread messages found
+      { $project: {
+        _id: 1,
+        participants: 1,
+        lastMessage: 1,
+        unreadMessages: { $ifNull: ['$unreadMessagesCount.unreadMessages', 0] },
+        updatedAt: 1
+      }}
+    ]);
+
+    // Send the response with the conversations
+    res.status(200).json(conversations);
+
   } catch (error) {
     console.error("Error fetching conversations:", error);
     res.status(500).json({ error: "An error occurred while fetching conversations", details: error.message });
   }
 };
 
-
- //Creates a new conversation between participants.
-
+/**
+ * Creates a new conversation between participants.
+ */
 module.exports.createConversation = async (req, res) => {
   try {
     const { participants } = req.body;
 
+    // Validate participants array
     if (!participants || !Array.isArray(participants) || participants.length < 2) {
       return res.status(400).json({ error: "A conversation must have at least two participants" });
     }
@@ -68,17 +92,19 @@ module.exports.createConversation = async (req, res) => {
   }
 };
 
-
- // Deletes a conversation and all associated messages.
- 
+/**
+ * Deletes a conversation and all associated messages.
+ */
 module.exports.deleteConversation = async (req, res) => {
   try {
     const { conversationId } = req.params;
 
+    // Validate conversationId format
     if (!mongoose.Types.ObjectId.isValid(conversationId)) {
       return res.status(400).json({ error: "Invalid conversation ID" });
     }
 
+    // Delete messages and conversation
     await Message.deleteMany({ conversation: conversationId });
     await Conversation.findByIdAndDelete(conversationId);
 
@@ -89,16 +115,27 @@ module.exports.deleteConversation = async (req, res) => {
   }
 };
 
-
- // Renames a conversation.
- 
+/**
+ * Renames a conversation.
+ */
 module.exports.renameConversation = async (req, res) => {
   try {
     const { conversationId } = req.params;
     const { newName } = req.body;
 
+    // Validate new name
     if (!newName || newName.trim() === "") {
       return res.status(400).json({ error: "Conversation name cannot be empty" });
+    }
+
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+
+    // Check if the user is a participant of the conversation
+    if (!conversation.participants.includes(req.user.userId)) {
+      return res.status(403).json({ error: "Forbidden: You are not a participant in this conversation" });
     }
 
     const updatedConversation = await Conversation.findByIdAndUpdate(
@@ -106,10 +143,6 @@ module.exports.renameConversation = async (req, res) => {
       { name: newName },
       { new: true }
     );
-
-    if (!updatedConversation) {
-      return res.status(404).json({ error: "Conversation not found" });
-    }
 
     res.status(200).json({ message: "Conversation renamed successfully", conversation: updatedConversation });
   } catch (error) {
@@ -126,6 +159,7 @@ module.exports.updateParticipants = async (req, res) => {
     const { conversationId } = req.params;
     const { userId, action } = req.body;
 
+    // Validate conversationId and userId formats
     if (!mongoose.Types.ObjectId.isValid(conversationId) || !mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ error: "Invalid conversation ID or user ID" });
     }
@@ -135,6 +169,12 @@ module.exports.updateParticipants = async (req, res) => {
       return res.status(404).json({ error: "Conversation not found" });
     }
 
+    // Check if the user is a participant of the conversation
+    if (!conversation.participants.includes(req.user.userId)) {
+      return res.status(403).json({ error: "Forbidden: You are not a participant in this conversation" });
+    }
+
+    // Add or remove the participant
     if (action === "add") {
       if (!conversation.participants.includes(userId)) {
         conversation.participants.push(userId);
@@ -161,6 +201,7 @@ const toggleFeature = async (req, res, featureKey, featureName) => {
   try {
     const { conversationId, userId } = req.params;
 
+    // Validate conversationId and userId formats
     if (!mongoose.Types.ObjectId.isValid(conversationId) || !mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ error: "Invalid conversation ID or user ID" });
     }
@@ -189,15 +230,8 @@ const toggleFeature = async (req, res, featureKey, featureName) => {
 // pin / unpin
 module.exports.pinConversation = (req, res) => toggleFeature(req, res, "pinnedUsers", "pin");
 
-
-// Archive/Unarchive a conversation.
-
+// Archive/Unarchive a conversation
 module.exports.archiveConversation = (req, res) => toggleFeature(req, res, "archivedUsers", "archive");
 
-
- // Mute/Unmute a conversation.
- 
+// Mute/Unmute a conversation
 module.exports.muteConversation = (req, res) => toggleFeature(req, res, "mutedUsers", "mute");
-
-
-
