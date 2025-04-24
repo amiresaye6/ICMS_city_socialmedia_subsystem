@@ -10,12 +10,6 @@ module.exports.getUserConversations = async (req, res) => {
   try {
     const { userId } = req.user; // Use userId from the JWT token instead of req.params
 
-    // Validate userId format
-    const isValidUserId = mongoose.Types.ObjectId.isValid(userId);
-    if (!isValidUserId) {
-      return res.status(400).json({ error: "Invalid user ID" });
-    }
-
     // Start aggregation pipeline to fetch user conversations
     const conversations = await Conversation.aggregate([
       // Step 1: Match conversations where the userId is one of the participants
@@ -122,6 +116,7 @@ module.exports.renameConversation = async (req, res) => {
   try {
     const { conversationId } = req.params;
     const { newName } = req.body;
+    const userId = req.user.userId;
 
     // Validate new name
     if (!newName || newName.trim() === "") {
@@ -201,10 +196,6 @@ const toggleFeature = async (req, res, featureKey, featureName) => {
   try {
     const { conversationId, userId } = req.params;
 
-    // Validate conversationId and userId formats
-    if (!mongoose.Types.ObjectId.isValid(conversationId) || !mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ error: "Invalid conversation ID or user ID" });
-    }
 
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
