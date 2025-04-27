@@ -1,8 +1,9 @@
 const { validationResult } = require("express-validator");
 const Post = require("../Models/posts.model");
 const User = require("../Models/users.model");
-const mongoose = require("mongoose");
 const { isUserAllowed } = require("../Middlewares/centralAuth.middleware");
+const fs = require('fs').promises;
+const path = require('path');
 
 // Get all posts with pagination
 exports.getAllPosts = async (req, res) => {
@@ -11,12 +12,38 @@ exports.getAllPosts = async (req, res) => {
     return res.status(400).send({ errors: result.array() });
   }
 
+  const scope = req.query.scope;
+
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
   try {
-    const posts = await Post.find().skip(skip).limit(limit);
+    let posts;
+    if (scope === "admin" || scope === "superAdmin") {
+      posts = await Post.find({ adminPost: true })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+
+      // this part is for performance enhancment
+      // posts = posts.map(post => ({
+      //   ...post,
+      //   comments: post.comments.slice(0, 5), // Limit comments to 5
+      //   saveList: post.saveList.slice(0, 5), // Limit save list to 5
+      //   shareList: post.shareList.slice(0, 5) // Limit share list to 5
+      // }));
+    } else if (scope === "user") {
+      posts = await Post.find({ adminPost: false })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+    } else {
+      posts = await Post.find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+    }
     const totalPosts = await Post.countDocuments();
     const totalPages = Math.ceil(totalPosts / limit);
 
@@ -70,6 +97,66 @@ exports.createPost = async (req, res) => {
     const newPostData = {
       postCaption: postCaption.trim(),
       author: req.user.userId,
+      media,
+    };
+
+    const newPost = await Post.create(newPostData);
+    const updatedUser = await User.findOne({ centralUsrId: req.user.userId });
+
+    updatedUser.posts.push(newPost._id);
+    await updatedUser.save();
+
+    res.status(201).json(newPost);
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({ error: "Validation error", details: errors });
+    }
+
+    if (error.name === "MulterError") {
+      return res.status(400).json({ error: "File upload error", details: error.message });
+    }
+
+    res.status(500).json({
+      error: "An unexpected error occurred while creating the post",
+      details: error.message,
+    });
+  }
+};
+
+// Create a admin post
+exports.createAdminPost = async (req, res) => {
+  try {
+    const { postCaption, tag } = req.body;
+
+    if (!postCaption || postCaption.trim() === "") {
+      return res.status(400).json({ error: "Post caption is required" });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "At least one media file is required" });
+    }
+
+    const media = req.files.map((file) => {
+      const type = getMediaType(file.mimetype);
+      if (!["image", "video", "audio"].includes(type)) {
+        throw new Error(`Invalid media type detected: ${type}`);
+      }
+      return {
+        type,
+        url: `/public/uploads/${file.filename}`,
+      };
+    });
+
+    if (!req.user || !req.user.userId) {
+      return res.status(401).json({ error: "Unauthorized: User not authenticated" });
+    }
+
+    const newPostData = {
+      postCaption: postCaption.trim(),
+      adminPost: true,
+      author: req.user.userId,
+      tags: tag ? [tag] : [],
       media,
     };
 
@@ -166,6 +253,7 @@ exports.addReaction = async (req, res) => {
 exports.sharePost = async (req, res) => {
   try {
     const postId = req.params.postId;
+    const { shareCaption } = req.body;
     const { userId } = req.user;
 
     if (!postId || !userId) {
@@ -190,7 +278,10 @@ exports.sharePost = async (req, res) => {
       return res.status(result.error.status).json({ message: result.error.message });
     }
 
-    await User.updateOne({ centralUsrId: userId }, { $push: { sharedPosts: postId } });
+    await User.updateOne(
+      { centralUsrId: userId },
+      { $push: { sharedPosts: { postId, shareCaption } } }
+    );
     await post.save();
 
     res.status(200).json({
@@ -208,18 +299,41 @@ exports.deletePost = async (req, res) => {
   try {
     const postId = req.params.postId;
 
+    // Check if user is allowed to delete the post
     const result = await isUserAllowed(req, postId);
     if (result.error) {
       return res.status(result.error.status).json({ message: result.error.message });
     }
 
-    await Post.deleteOne({ _id: postId });
-    const updatedUser = await User.findOne({ centralUsrId: req.user.userId });
+    // Fetch the post to get media details before deleting it
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
 
+    // Delete media files from the server
+    if (post.media && post.media.length > 0) {
+      for (const mediaItem of post.media) {
+        const filePath = path.join(__dirname, '..', mediaItem.url); // Adjust path as per your project structure
+        try {
+          await fs.unlink(filePath); // Delete the file
+          console.log(`Deleted file: ${filePath}`);
+        } catch (fileError) {
+          console.error(`Failed to delete file ${filePath}: ${fileError.message}`);
+          // Optionally, you could throw an error or continue based on your requirements
+        }
+      }
+    }
+
+    // Delete the post from the database
+    await Post.deleteOne({ _id: postId });
+
+    // Update the user's posts array
+    const updatedUser = await User.findOne({ centralUsrId: req.user.userId });
     updatedUser.posts.pull(postId);
     await updatedUser.save();
 
-    res.status(200).json({ message: "Post deleted successfully" });
+    res.status(200).json({ message: "Post and associated media deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

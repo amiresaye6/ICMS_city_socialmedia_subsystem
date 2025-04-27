@@ -25,13 +25,21 @@ router.get(
   postsController.getPostsByUserId
 );
 
-// Create a new post
+// Create a normal post
 router.post(
   "/",
   centralAuthMiddleware.centralAuthenticate,
   upload.array("media", 5),
   postsValidator.validateCreatePost,
   postsController.createPost
+);
+// Create an admin post
+router.post(
+  "/admin",
+  centralAuthMiddleware.isUserAdmin,
+  upload.array("media", 5),
+  postsValidator.validateCreatePost,
+  postsController.createAdminPost
 );
 
 // Delete a specific post
