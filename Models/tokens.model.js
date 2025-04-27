@@ -10,12 +10,6 @@ const tokenSchema = new mongoose.Schema({
             Schema.Types.ObjectId, ref: 'User',
         required: true
     },
-    type: {
-         type: String,
-         enum: ['access', 'refresh'], 
-         required: true 
-        }, 
-
     createdAt: {
         type: Date,
         default: Date.now,
