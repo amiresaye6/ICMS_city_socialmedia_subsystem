@@ -29,7 +29,11 @@ router.put("/:conversationId/rename",
 router.put("/:conversationId/participants",
     centralAuthMiddleware.centralAuthenticate,
     conversationController.updateParticipants);
-
+//  unread conversations 
+router.get("/:conversationId/unread", 
+    centralAuthMiddleware.centralAuthenticate, 
+    conversationController.getUnreadConversations
+);
 // Route to pin or unpin a conversation
 router.put("/:conversationId/pin/:userId",
     centralAuthMiddleware.centralAuthenticate,

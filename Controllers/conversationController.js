@@ -147,6 +147,7 @@ module.exports.renameConversation = async (req, res) => {
 };
 
 /**
+ * 
  * Adds or removes a participant from a conversation.
  */
 module.exports.updateParticipants = async (req, res) => {
@@ -188,6 +189,57 @@ module.exports.updateParticipants = async (req, res) => {
     res.status(500).json({ error: "Failed to update participants" });
   }
 };
+ 
+
+//  unread conversations
+module.exports.getUnreadConversations = async (req, res) => {
+  try {
+    const userId = req.user.id; // Get the current user's ID
+
+    // Get conversation IDs with unread messages
+    const unreadConversationIds = await Message.find({
+      recipientId: userId,
+      isRead: false
+    }).distinct('conversationId');
+
+    if (unreadConversationIds.length === 0) {
+      return res.status(200).json([]); // No unread conversations
+    }
+
+    // Fetch conversation details
+    const unreadConversations = await Conversation.find({
+      _id: { $in: unreadConversationIds }
+    })
+    .populate('members', 'username profilePic') // Populate member details
+    .sort({ updatedAt: -1 }); // Sort by latest updatedAt
+
+    // Fetch the last message for each conversation
+    const conversationsWithLastMessage = await Promise.all(
+      unreadConversations.map(async (conversation) => {
+        const lastMessage = await Message.findOne({
+          conversationId: conversation._id
+        })
+        .sort({ createdAt: -1 })
+        .select('text senderId recipientId createdAt');
+
+        return {
+          conversation,
+          lastMessage
+        };
+      })
+    );
+
+    // Send the result
+    res.status(200).json(conversationsWithLastMessage);
+
+  } catch (error) {
+    console.error('Error fetching unread conversations:', error.message);
+    res.status(500).json({ message: 'Failed to fetch unread conversations' });
+  }
+};
+
+
+
 
 /**
  * Toggles a feature (Pin, Archive, Mute) for a user in a conversation.
