@@ -1,5 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const http = require("http");
+const socketIo = require("socket.io");
 const cors = require('cors');               // Middleware for Cross-Origin Resource Sharing
 const morgan = require('morgan');           // Middleware for HTTP request logging
 // const { check, validationResult } = require('express-validator'); // Middleware for request validation
@@ -15,9 +17,14 @@ const postsRoutes = require("./Routes/posts.routes");
 const commentsRoutes = require("./Routes/comments.routes");
 const usersRoutes = require("./Routes/users.routes");
 const centralAuthRoutes = require("./Routes/centraAuth.routes");
+const messageRoutes = require("./Routes/messageRoutes");
+const conversationRoutes = require("./Routes/conversationRoutes");
 
 const app = express();
-
+const server = http.createServer(app);
+const io = socketIo(server, { cors: { origin: "*" } });
+ 
+const { handleSocketConnection } = require("./socket");
 // Middleware section
 app.use(express.json());                    // Parse incoming JSON payloads
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded payloads >>> allow using req.body
@@ -38,7 +45,11 @@ app.use("/api/posts", postsRoutes);
 app.use("/api/comments", commentsRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/auth", centralAuthRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/conversations", conversationRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+handleSocketConnection(io); //webSocket chat connection
 
 const port = process.env.PORT || 1234;
 const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING || "mongodb://127.0.0.1:27017/Socialmedia"
