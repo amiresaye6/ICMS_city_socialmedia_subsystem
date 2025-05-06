@@ -21,16 +21,14 @@ const validateObjectId = (id, res, fieldName = "ID") => {
   }
   return true;
 }; 
-// Send a new message.
+// Send a new message.const  
+
 module.exports.sendMessage = async (req, res) => {
   try {
-    const sender =req.user.userId
-    const {
-       conversation,  
-       content, messageType,
-        replyTo
-       } = req.body;
+    const sender = req.user.userId;
+    const { conversation, content, messageType, replyTo } = req.body;
     const files = req.files;
+
 
     // Validate required fields: either text or attachments must exist
     if (!conversation || !sender || (!content?.trim() && (!files || files.length === 0))) {
@@ -42,6 +40,7 @@ module.exports.sendMessage = async (req, res) => {
       const ext = mime.extension(file.mimetype); // Get file extension from mimetype
       let fileType = "file";
 
+      // Check the file type and classify it
       if (file.mimetype.startsWith("image/")) fileType = "image";
       else if (file.mimetype.startsWith("video/")) fileType = "video";
       else if (file.mimetype.startsWith("audio/")) fileType = "audio";
@@ -53,15 +52,21 @@ module.exports.sendMessage = async (req, res) => {
       };
     }) || [];
 
+    // If no content and no attachments, return an error
+    if (!content && attachments.length === 0) {
+      return res.status(400).json({ error: "Message must have text or attachments" });
+    }
+
     const newMessage = new Message({
       conversation,
       sender,
       content: content || "",
-      messageType: messageType || (attachments.length ? attachments[0].fileType : "text"),
+      messageType: messageType || (attachments.length ? attachments[0].fileType : "text"),  // If no text, use first attachment's type
       attachments,
       replyTo: replyTo || null,
     });
 
+    // Save the message to the database
     await newMessage.save();
 
     res.status(201).json({ message: "Message sent", data: newMessage });
@@ -69,6 +74,7 @@ module.exports.sendMessage = async (req, res) => {
     res.status(500).json({ error: "Error sending message", details: error.message });
   }
 };
+
 
 /**
  * Retrieve messages between two users.

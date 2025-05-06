@@ -103,28 +103,23 @@ module.exports.changeBio = async (req, res) => {
 
 module.exports.changeAvatar = async (req, res) => {
     try {
-        // Validate Uploaded Media
-        if (!req.files || req.files.length === 0) {
+        // Validate uploaded file
+        if (!req.file) {
             return res.status(400).json({
-                error: 'At least one media file is required'
+                error: 'Profile picture is required'
             });
         }
 
-        const media = req.files.map(file => {
-            // Determine the media type (image, video, audio) from mimetype
-            const type = getMediaType(file.mimetype);
+        // Determine the media type
+        const type = getMediaType(req.file.mimetype);
 
-            // Validate the type according to the media schema enum
-            if (!['image', 'video', 'audio'].includes(type)) {
-                throw new Error(`Invalid media type detected: ${type}`);
-            }
+        // Validate media type
+        if (!['image', 'video', 'audio'].includes(type)) {
+            return res.status(400).json({ error: `Invalid media type: ${type}` });
+        }
 
-            // Use the correct file URL, remove "/public" from the path
-            return {
-                type,
-                url: `/public/uploads/${file.filename}` // to be able to send req directly to it.
-            };
-        });
+        // Construct media URL
+        const mediaUrl = `/uploads/profilePics/${req.file.filename}`;
 
         const { userId } = req.user;
 
@@ -140,7 +135,7 @@ module.exports.changeAvatar = async (req, res) => {
 
         const user = await User.findOneAndUpdate(
             { centralUsrId: userId },
-            { $set: { avatarUrl: media[0].url } },
+            { $set: { avatarUrl: mediaUrl } },
             { new: true }
         );
 
@@ -152,7 +147,7 @@ module.exports.changeAvatar = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-}
+};
 
 module.exports.changeCover = async (req, res) => {
     try {

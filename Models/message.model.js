@@ -9,7 +9,7 @@ const MessageSchema = new mongoose.Schema(
     },
     sender: {
       type: String,
-      ref: "User",
+     
       required: true,
     },
     content: {
@@ -37,7 +37,7 @@ const MessageSchema = new mongoose.Schema(
       {
         user: {
           type: String,
-          ref: "User",
+         
         },
         emoji: {
           type: String,
@@ -48,7 +48,7 @@ const MessageSchema = new mongoose.Schema(
     readBy: [
       {
         type: String,
-        ref: "User",
+       
       },
     ],
     deleted: {

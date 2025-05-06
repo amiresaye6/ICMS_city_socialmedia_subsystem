@@ -4,7 +4,7 @@ const ConversationSchema = new mongoose.Schema(
     // Array of participant user IDs (at least 2 users are required)
     participants: {
       type: [{ type: String,
-         ref: "User", 
+        
          required: true }],
       validate: {
         validator: function (participants) {
@@ -15,7 +15,7 @@ const ConversationSchema = new mongoose.Schema(
     },
     mutedUsers: [{
        type: String, 
-          ref: "User" }],
+         }],
     
     archivedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 

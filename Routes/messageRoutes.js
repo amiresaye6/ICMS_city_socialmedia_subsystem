@@ -1,13 +1,14 @@
 const express = require("express");
 const messageController = require("../Controllers/messageController");
 const router = express.Router();
-const upload = require('../config/multer'); 
 const authMiddleware = require("../Middlewares/auth.middleware");
 const centralAuthMiddleware = require("../Middlewares/centralAuth.middleware");
+const upload = require("../Middlewares/fileUpload.middleware");
+
 
 
 // Send a new message with or without attachment (upload files if any)
-router.post("/send", upload.array("files", 5),
+router.post("/send", upload.array('attachments', 10),
 centralAuthMiddleware.centralAuthenticate,
  messageController.sendMessage); 
 
