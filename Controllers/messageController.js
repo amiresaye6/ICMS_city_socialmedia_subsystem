@@ -84,33 +84,53 @@ module.exports.sendMessage = async (req, res) => {
  */
 module.exports.getMessagesBetweenUsers = async (req, res) => {
   try {
-    const user1 =req.user.userId
-    const {user2 } = req.params;
-
+    const user1 = req.user.userId;
+    const { user2 } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+    
+    // Convert to numbers
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    
     if (!validateObjectId(user1, res, "user1") || !validateObjectId(user2, res, "user2")) {
       return;
     }
+
+    const conversation = await Conversation.findOne({
+      participants: { $all: [user1, user2] }
+    });
+
     if (!conversation) {
       return res.status(404).json({ error: "Conversation not found" });
     }
 
-    const conversation = await Conversation.findOne({
-      participants: { $all: [user1, user2] },
-    }); 
+    // Get total count for pagination
+    const totalMessages = await Message.countDocuments({
+      conversation: conversation._id
+    });
 
+    // Get paginated messages
     const messages = await Message.find({
-    
-         sender: user1, recipient: user2 
-        
-        })
-      .sort({ createdAt: 1 })
+      conversation: conversation._id
+    })
+      .sort({ createdAt: -1 })
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum)
       .populate("sender", "username avatar")
       .populate("replyTo")
       .populate("reactions.user", "username avatar");
 
-    res.status(200).json(messages);
+    res.status(200).json({
+      messages: messages.reverse(), // Reverse to maintain chronological order
+      pagination: {
+        total: totalMessages,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(totalMessages / limitNum)
+      }
+    });
   } catch (error) {
-    res.status(500).json({ error: "Error fetching messages" });
+    res.status(500).json({ error: "Error fetching messages", details: error.message });
   }
 };
  
@@ -271,9 +291,13 @@ module.exports.unsendMessage = async (req, res) => {
 module.exports.addReaction = async (req, res) => {
   try {
     const { messageId } = req.params;
-    const { userId, emoji } = req.body;
+    const userId = req.user.userId;
+    const { emoji } = req.body;
 
-   
+    if (!validateObjectId(messageId, res, "message")) {
+      return;
+    }
+
     const allowedReactions = ["like", "love", "haha", "sad", "angry", "wow", "care"];
     if (!allowedReactions.includes(emoji)) {
       return res.status(400).json({ error: "Invalid reaction emoji" });
@@ -291,7 +315,7 @@ module.exports.addReaction = async (req, res) => {
 
     res.status(200).json({ message: "Reaction added successfully", data: updatedMessage });
   } catch (error) {
-    res.status(500).json({ error: "Error adding reaction" });
+    res.status(500).json({ error: "Error adding reaction", details: error.message });
   }
 }; 
 
@@ -319,6 +343,139 @@ module.exports.removeReaction = async (req, res) => {
     res.status(200).json({ message: "Reaction removed successfully", data: message });
   } catch (error) {
     res.status(500).json({ error: "Error removing reaction" });
+  }
+};
+
+module.exports.forwardMessage = async (req, res) => {
+  try {
+    const sender = req.user.userId;
+    const { messageId, conversationId } = req.body;
+    
+    if (!validateObjectId(messageId, res, "message") || 
+        !validateObjectId(conversationId, res, "conversation")) {
+      return;
+    }
+    
+    // Find original message
+    const originalMessage = await Message.findById(messageId);
+    if (!originalMessage) {
+      return res.status(404).json({ error: "Original message not found" });
+    }
+    
+    // Create new message with same content
+    const newMessage = new Message({
+      conversation: conversationId,
+      sender,
+      content: originalMessage.content,
+      messageType: originalMessage.messageType,
+      attachments: originalMessage.attachments,
+      forwardedFrom: messageId
+    });
+    
+    await newMessage.save();
+    
+    res.status(201).json({ 
+      message: "Message forwarded successfully", 
+      data: newMessage 
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Error forwarding message", details: error.message });
+  }
+};
+
+module.exports.searchMessages = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { query } = req.query;
+    
+    if (!query || typeof query !== "string") {
+      return res.status(400).json({ error: "Search query is required" });
+    }
+    
+    // Find conversations where user is a participant
+    const conversations = await Conversation.find({
+      participants: userId
+    });
+    
+    if (conversations.length === 0) {
+      return res.status(200).json([]);
+    }
+    
+    const conversationIds = conversations.map(conv => conv._id);
+    
+    // Search for messages in user's conversations
+    const messages = await Message.find({
+      conversation: { $in: conversationIds },
+      content: { $regex: query, $options: 'i' },
+      deleted: false
+    })
+    .sort({ createdAt: -1 })
+    .populate("sender", "username avatar")
+    .limit(20);
+    
+    res.status(200).json(messages);
+  } catch (error) {
+    res.status(500).json({ error: "Error searching messages", details: error.message });
+  }
+};
+
+/**
+ * Pin/Unpin a message in a conversation
+ */
+module.exports.togglePinMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user.userId;
+
+    if (!validateObjectId(messageId, res, "message")) {
+      return;
+    }
+
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    // Toggle pin status
+    message.isPinned = !message.isPinned;
+    message.pinnedBy = message.isPinned ? userId : null;
+    
+    await message.save();
+
+    res.status(200).json({ 
+      message: `Message ${message.isPinned ? 'pinned' : 'unpinned'} successfully`, 
+      data: {
+        _id: message._id,
+        isPinned: message.isPinned
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Error updating message pin status", details: error.message });
+  }
+};
+
+/**
+ * Get pinned messages in a conversation
+ */
+module.exports.getPinnedMessages = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    
+    if (!validateObjectId(conversationId, res, "conversation")) {
+      return;
+    }
+    
+    const pinnedMessages = await Message.find({
+      conversation: conversationId,
+      isPinned: true,
+      deleted: false
+    })
+    .sort({ createdAt: -1 })
+    .populate("sender", "username avatar");
+    
+    res.status(200).json({ messages: pinnedMessages });
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching pinned messages", details: error.message });
   }
 };
 

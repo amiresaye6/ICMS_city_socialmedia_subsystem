@@ -269,6 +269,40 @@ Authorization: Bearer <your_access_token>
 
 ---
 
+## 9. Get Pinned Messages
+
+**Endpoint:** `/pinned`
+**Method:** `GET`
+**Headers:**
+
+* `Authorization: Bearer <token>`
+
+**Success Response:**
+
+```json
+{
+  "messages": [
+    {
+      "_id": "...",
+      "conversation": "...",
+      "sender": "...",
+      "content": "Important message",
+      "messageType": "text",
+      "isPinned": true,
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ]
+}
+```
+
+**Error Responses:**
+
+* `401 Unauthorized`: Invalid or missing token
+* `500 Internal Server Error`: Server error
+
+---
+
 ## Rate Limiting
 
 All endpoints are limited to 100 requests per minute.

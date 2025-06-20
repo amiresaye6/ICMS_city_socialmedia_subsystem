@@ -200,6 +200,67 @@ Authorization: Bearer <token>
 
 ---
 
+## 10. Get Pinned Conversations
+
+**Endpoint:** `GET /conversations/pinned`
+
+**Description:** Returns all conversations that the user has pinned.
+
+**Success Response:**
+
+```json
+[
+  {
+    "_id": "conv123",
+    "participants": ["user1", "user2"],
+    "lastMessage": {
+      "content": "Important message",
+      "sender": "user1",
+      "createdAt": "2025-06-20T10:00:00Z"
+    },
+    "updatedAt": "2025-06-20T10:00:00Z"
+  }
+]
+```
+
+**Error Response:**
+
+```json
+{
+  "error": "Failed to fetch pinned conversations"
+}
+```
+
+---
+
+## 11. Pin/Unpin a Message
+
+**Endpoint:** `PUT /messages/:messageId/pin`
+
+**Description:** Toggles the pin status of a specific message.
+
+**Success Response:**
+
+```json
+{
+  "message": "Message pin status updated",
+  "data": {
+    "_id": "msg123",
+    "isPinned": true
+  }
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "error": "You don't have permission to pin this message"
+}
+```
+
+---
+
 ## Error Responses
 
 Common errors include:

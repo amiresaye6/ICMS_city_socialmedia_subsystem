@@ -53,4 +53,24 @@ router.put("/:messageId/reaction/remove",
     centralAuthMiddleware.centralAuthenticate,
     messageController.removeReaction);
 
+// Search messages
+router.get("/search", 
+    centralAuthMiddleware.centralAuthenticate,
+    messageController.searchMessages);
+
+// Forward a message
+router.post("/forward",
+    centralAuthMiddleware.centralAuthenticate,
+    messageController.forwardMessage);
+
+// Pin/Unpin a message
+router.put("/:messageId/pin", 
+    centralAuthMiddleware.centralAuthenticate,
+    messageController.togglePinMessage);
+
+// Get pinned messages
+router.get("/pinned/:conversationId", 
+    centralAuthMiddleware.centralAuthenticate,
+    messageController.getPinnedMessages);
+
 module.exports = router;
