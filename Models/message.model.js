@@ -45,6 +45,12 @@ const MessageSchema = new mongoose.Schema(
         },
       },
     ],
+    deliveredTo: [
+      {
+        type: String,
+        ref: "User",
+      },
+    ],
     readBy: [
       {
         type: String,

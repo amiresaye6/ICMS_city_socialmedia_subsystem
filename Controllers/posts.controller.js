@@ -86,7 +86,7 @@ exports.createPost = async (req, res) => {
       }
       return {
         type,
-        url: `/public/uploads/${file.filename}`,
+        url: `/public/uploads/posts/${file.filename}`,
       };
     });
 

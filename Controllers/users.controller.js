@@ -102,24 +102,24 @@ module.exports.changeBio = async (req, res) => {
 }
 
 module.exports.changeAvatar = async (req, res) => {
-    try {
+     try {
         // Validate uploaded file
-        if (!req.file) {
+        if (!req.files) {
             return res.status(400).json({
                 error: 'Profile picture is required'
             });
         }
-
+        
         // Determine the media type
-        const type = getMediaType(req.file.mimetype);
-
+        const type = getMediaType(req.files.mimetype);
+       
         // Validate media type
         if (!['image', 'video', 'audio'].includes(type)) {
             return res.status(400).json({ error: `Invalid media type: ${type}` });
         }
-
+        console.log(req.files)
         // Construct media URL
-        const mediaUrl = `/uploads/profilePics/${req.file.filename}`;
+        const mediaUrl = `/uploads/avatar/${req.files.filename}`;
 
         const { userId } = req.user;
 

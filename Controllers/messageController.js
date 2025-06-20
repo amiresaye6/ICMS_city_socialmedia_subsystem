@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Message = require("../Models/message.model");
 const mime = require('mime-types'); 
+const path = require('path');
 
 /**
  * Helper function to validate ObjectIds.
@@ -29,7 +30,7 @@ module.exports.sendMessage = async (req, res) => {
     const { conversation, content, messageType, replyTo } = req.body;
     const files = req.files;
 
-
+ 
     // Validate required fields: either text or attachments must exist
     if (!conversation || !sender || (!content?.trim() && (!files || files.length === 0))) {
       return res.status(400).json({ error: "Message must have text or attachments" });
@@ -46,8 +47,10 @@ module.exports.sendMessage = async (req, res) => {
       else if (file.mimetype.startsWith("audio/")) fileType = "audio";
       else if (ext === "pdf" || ext === "docx" || ext === "txt") fileType = "file";
 
+      const folder = file.destination.split(path.sep).pop();
+
       return {
-        url: `/uploads/${file.filename}`,
+        url: `/uploads/${folder}/${file.filename}`,
         fileType,
       };
     }) || [];
@@ -108,6 +111,31 @@ module.exports.getMessagesBetweenUsers = async (req, res) => {
     res.status(200).json(messages);
   } catch (error) {
     res.status(500).json({ error: "Error fetching messages" });
+  }
+};
+ 
+module.exports.markMessagesAsDelivered = async (req, res) => {
+  try {
+    const UserId = req.user.userId;
+    const { userId: otherUserId } = req.params;
+
+    if (!validateUserId(UserId, res, "User") || !validateUserId(otherUserId, res, "otherUser")) {
+      return;
+    }
+
+    await Message.updateMany(
+      {
+        sender: otherUserId,
+        deliveredTo: { $ne: UserId }
+      },
+      {
+        $addToSet: { deliveredTo: UserId }
+      }
+    );
+
+    res.status(200).json({ message: "Messages marked as delivered" });
+  } catch (error) {
+    res.status(500).json({ error: "Error updating messages", details: error.message });
   }
 };
 
