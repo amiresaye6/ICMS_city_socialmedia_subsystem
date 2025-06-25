@@ -69,7 +69,7 @@ exports.getAllPosts = async (req, res) => {
 // Create a new post
 exports.createPost = async (req, res) => {
   try {
-    const { postCaption } = req.body;
+    const { postCaption, tag } = req.body;
 
     if (!postCaption || postCaption.trim() === "") {
       return res.status(400).json({ error: "Post caption is required" });
@@ -86,7 +86,7 @@ exports.createPost = async (req, res) => {
       }
       return {
         type,
-        url: `/public/uploads/${file.filename}`,
+        url: `/public/uploads/posts/${file.filename}`,
       };
     });
 
@@ -97,6 +97,7 @@ exports.createPost = async (req, res) => {
     const newPostData = {
       postCaption: postCaption.trim(),
       author: req.user.userId,
+      tags: [tag],
       media,
     };
 
@@ -144,7 +145,7 @@ exports.createAdminPost = async (req, res) => {
       }
       return {
         type,
-        url: `/public/uploads/${file.filename}`,
+        url: `/public/uploads/posts/${file.filename}`,
       };
     });
 

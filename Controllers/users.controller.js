@@ -103,23 +103,27 @@ module.exports.changeBio = async (req, res) => {
 
 module.exports.changeAvatar = async (req, res) => {
     try {
+        let i = 0;
         // Validate uploaded file
-        if (!req.file) {
+        if (!req.files) {
             return res.status(400).json({
                 error: 'Profile picture is required'
             });
         }
 
+        console.log("step", i++, req.files[0])
         // Determine the media type
-        const type = getMediaType(req.file.mimetype);
+        const type = getMediaType(req.files[0].mimetype);
+
 
         // Validate media type
-        if (!['image', 'video', 'audio'].includes(type)) {
+        if (type !== 'image') {
             return res.status(400).json({ error: `Invalid media type: ${type}` });
         }
 
+
         // Construct media URL
-        const mediaUrl = `/uploads/profilePics/${req.file.filename}`;
+        const mediaUrl = `/public/uploads/avatar/${req.files[0].filename}`;
 
         const { userId } = req.user;
 
@@ -127,11 +131,14 @@ module.exports.changeAvatar = async (req, res) => {
             return res.status(400).json({ message: "Invalid request, user ID is required" });
         }
 
+
         const result = await isUserAllowed(req, null, userId);
+
 
         if (result.error) {
             return res.status(result.error.status).json({ message: result.error.message });
         }
+
 
         const user = await User.findOneAndUpdate(
             { centralUsrId: userId },
@@ -139,13 +146,15 @@ module.exports.changeAvatar = async (req, res) => {
             { new: true }
         );
 
+
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
+
         res.json(user);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: `Internal server error: ${error.message}` });
     }
 };
 
@@ -170,7 +179,7 @@ module.exports.changeCover = async (req, res) => {
             // Use the correct file URL, remove "/public" from the path
             return {
                 type,
-                url: `/public/uploads/${file.filename}` // to be able to send req directly to it.
+                url: `/public/uploads/cover/${file.filename}` // to be able to send req directly to it.
             };
         });
 
@@ -325,6 +334,6 @@ function getMediaType(mimetype) {
     } else if (mimetype.startsWith('audio/')) {
         return 'audio';
     } else {
-        return 'unknown';
+        return null;
     }
 }

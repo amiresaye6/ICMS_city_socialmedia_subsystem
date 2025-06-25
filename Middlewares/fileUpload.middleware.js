@@ -16,9 +16,9 @@ const storage = multer.diskStorage({
 
         const url = req.originalUrl.toLowerCase();
 
-        if (url.includes('/profilepic')) {
+        if (url.includes('/avatar')) {
             folder = 'avatar';
-        } else if (url.includes('/coverpic')) {
+        } else if (url.includes('/cover')) {
             folder = 'cover';
         } else if (url.includes('/posts')) {
             folder = 'posts';
