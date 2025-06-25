@@ -38,6 +38,11 @@ const ConversationSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
+
+    // Add pinned users field
+    pinnedUsers: [{
+      type: String,
+    }],
   },
   { timestamps: true } // Automatically manages createdAt and updatedAt fields
 );

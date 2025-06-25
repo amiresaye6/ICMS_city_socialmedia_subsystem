@@ -8,15 +8,21 @@ const upload = require("../Middlewares/fileUpload.middleware");
 
 
 // Send a new message with or without attachment (upload files if any)
-router.post("/send", upload.array('attachments', 10),
+router.post("/send",
 centralAuthMiddleware.centralAuthenticate,
+upload.array('attachments', 10),
  messageController.sendMessage); 
 
 // Get messages between two users
 router.get("/:user1/:user2",
     centralAuthMiddleware.centralAuthenticate,
     messageController.getMessagesBetweenUsers);
-
+    
+// Messages marked as delivered
+    router.put("/delivered/:userId", 
+        centralAuthMiddleware.centralAuthenticate, 
+        messageController.markMessagesAsDelivered);
+ 
 // Mark messages as read between two users
 router.put("/read/:userId",
     centralAuthMiddleware.centralAuthenticate,
@@ -46,5 +52,25 @@ router.post("/:messageId/reaction",
 router.put("/:messageId/reaction/remove", 
     centralAuthMiddleware.centralAuthenticate,
     messageController.removeReaction);
+
+// Search messages
+router.get("/search", 
+    centralAuthMiddleware.centralAuthenticate,
+    messageController.searchMessages);
+
+// Forward a message
+router.post("/forward",
+    centralAuthMiddleware.centralAuthenticate,
+    messageController.forwardMessage);
+
+// Pin/Unpin a message
+router.put("/:messageId/pin", 
+    centralAuthMiddleware.centralAuthenticate,
+    messageController.togglePinMessage);
+
+// Get pinned messages
+router.get("/pinned/:conversationId", 
+    centralAuthMiddleware.centralAuthenticate,
+    messageController.getPinnedMessages);
 
 module.exports = router;

@@ -103,7 +103,6 @@ module.exports.changeBio = async (req, res) => {
 
 module.exports.changeAvatar = async (req, res) => {
     try {
-        let i = 0;
         // Validate uploaded file
         if (!req.files) {
             return res.status(400).json({
@@ -111,16 +110,13 @@ module.exports.changeAvatar = async (req, res) => {
             });
         }
 
-        console.log("step", i++, req.files[0])
         // Determine the media type
         const type = getMediaType(req.files[0].mimetype);
-
 
         // Validate media type
         if (type !== 'image') {
             return res.status(400).json({ error: `Invalid media type: ${type}` });
         }
-
 
         // Construct media URL
         const mediaUrl = `/public/uploads/avatar/${req.files[0].filename}`;

@@ -278,3 +278,39 @@ module.exports.archiveConversation = (req, res) => toggleFeature(req, res, "arch
 
 // Mute/Unmute a conversation
 module.exports.muteConversation = (req, res) => toggleFeature(req, res, "mutedUsers", "mute");
+
+/**
+ * Get pinned conversations for a user
+ */
+module.exports.getPinnedConversations = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    const pinnedConversations = await Conversation.find({
+      pinnedUsers: userId
+    })
+    .sort({ updatedAt: -1 })
+    .populate('participants', 'userName avatarUrl');
+    
+    // Fetch the last message for each conversation
+    const conversationsWithLastMessage = await Promise.all(
+      pinnedConversations.map(async (conversation) => {
+        const lastMessage = await Message.findOne({
+          conversationId: conversation._id
+        })
+        .sort({ createdAt: -1 })
+        .select('content sender createdAt');
+
+        return {
+          conversation,
+          lastMessage
+        };
+      })
+    );
+    
+    res.status(200).json(conversationsWithLastMessage);
+  } catch (error) {
+    console.error("Error fetching pinned conversations:", error);
+    res.status(500).json({ error: "Failed to fetch pinned conversations" });
+  }
+};

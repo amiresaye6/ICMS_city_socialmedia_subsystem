@@ -49,5 +49,9 @@ router.put("/:conversationId/mute/:userId",
     centralAuthMiddleware.centralAuthenticate,
     conversationController.muteConversation);
 
+// Route to get pinned conversations
+router.get("/pinned",
+    centralAuthMiddleware.centralAuthenticate,
+    conversationController.getPinnedConversations);
 
 module.exports = router;
