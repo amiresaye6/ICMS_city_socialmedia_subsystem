@@ -3,9 +3,8 @@ const Message = require("../Models/message.model");
 const mime = require('mime-types'); 
 const path = require('path');
 
-/**
- * Helper function to validate ObjectIds.
- */
+
+// Helper function to check if a user ID is a non-empty string
 const validateUserId = (id, res, fieldName) => {
   if (typeof id !== "string" || !id.trim()) {
     res.status(400).json({ error: `Invalid ${fieldName} ID` });
@@ -79,9 +78,9 @@ module.exports.sendMessage = async (req, res) => {
 };
 
 
-/**
- * Retrieve messages between two users.
- */
+
+ //Retrieve messages between two users.
+ 
 module.exports.getMessagesBetweenUsers = async (req, res) => {
   try {
     const user1 = req.user.userId;
@@ -133,7 +132,8 @@ module.exports.getMessagesBetweenUsers = async (req, res) => {
     res.status(500).json({ error: "Error fetching messages", details: error.message });
   }
 };
- 
+
+//mark messages as delivered
 module.exports.markMessagesAsDelivered = async (req, res) => {
   try {
     const UserId = req.user.userId;
@@ -159,9 +159,9 @@ module.exports.markMessagesAsDelivered = async (req, res) => {
   }
 };
 
-/**
- * Mark messages as read between two users.
- */module.exports.markMessagesAsRead = async (req, res) => {
+
+ // Mark messages as read between two users.
+ module.exports.markMessagesAsRead = async (req, res) => {
   try {
     const UserId = req.user.userId; 
     const { userId: otherUserId } = req.params;
@@ -188,73 +188,88 @@ module.exports.markMessagesAsDelivered = async (req, res) => {
 
 
 
-/**
- * Edit a message.
- */
 
+//edit message
 module.exports.editMessage = async (req, res) => {
   try {
-    // Extract message ID from URL parameters and new text from the request body
     const { messageId } = req.params;
-    const { text } = req.body;
-
-    // Get the currently authenticated user's ID
     const userId = req.user.userId;
-
-    // Validate the message ID format
-    if (!validateObjectId(messageId, res, "message")) return;
-
-    // Ensure the new text is not empty or invalid
-    if (!text || typeof text !== "string" || !text.trim()) {
-      return res.status(400).json({ error: "Text content is required" });
-    }
-
-    // Find the message by its ID
-    const message = await Message.findById(messageId);
-    if (!message) {
-      return res.status(404).json({ error: "Message not found" });
-    }
-
-    // Only allow the original sender to edit their own message
-    if (message.sender.toString() !== userId.toString()) {
-      return res.status(403).json({ error: "You are not authorized to edit this message" });
-    }
-
-    // Update the message content and mark it as edited
-    message.content = text.trim();
-    message.edited = true;
-    await message.save();
-
-    // Send success response with the updated message
-    res.status(200).json({ message: "Message edited successfully", data: message });
-
-  } catch (error) {
-    // Catch and handle any unexpected errors
-    console.error("Error editing message:", error);
-    res.status(500).json({ error: "Error editing message", details: error.message });
-  }
-};
-
-/**
- * Soft delete a message.
- */
-module.exports.deleteMessage = async (req, res) => {
-  try {
-    const { messageId } = req.params;
+    const { content } = req.body;
 
     if (!validateObjectId(messageId, res, "message")) {
       return;
     }
 
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ error: "Message content cannot be empty" });
+    }
+
+    // Find the message first
+    const message = await Message.findById(messageId);
+    
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+    
+    // Check if the user is the sender of the message
+    if (message.sender.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized: You can only edit your own messages" });
+    }
+
+    // Save the original content to edit history
+    if (!message.editHistory) {
+      message.editHistory = [];
+    }
+    
+    message.editHistory.push({
+      content: message.content,
+      editedAt: new Date()
+    });
+    
+    // Update the message
+    message.content = content;
+    message.edited = true;
+    await message.save();
+
+    res.status(200).json({ 
+      message: "Message edited successfully", 
+      data: message 
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Error editing message", details: error.message });
+  }
+};
+
+
+ //Delete a message (soft delete).
+ 
+module.exports.deleteMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const userId = req.user.userId;
+
+    if (!validateObjectId(messageId, res, "message")) {
+      return;
+    }
+
+    // Find the message first
+    const message = await Message.findById(messageId);
+    
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+    
+    // Check if the user is the sender of the message
+    if (message.sender.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized: You can only delete your own messages" });
+    }
+
+    // Proceed with soft delete
     const deletedMessage = await Message.findByIdAndUpdate(
       messageId,
       { deleted: true, content: "This message was deleted." },
       { new: true }
     );
-
-    if (!deletedMessage) {
-      return res.status(404).json({ error: "Message not found" });
-    }
 
     res.status(200).json({ message: "Message deleted successfully", data: deletedMessage });
   } catch (error) {
@@ -262,22 +277,32 @@ module.exports.deleteMessage = async (req, res) => {
   }
 };
 
-/**
- * Unsend a message (permanent deletion).
- */
+
+ //Unsend a message (permanent deletion).
+ 
 module.exports.unsendMessage = async (req, res) => {
   try {
     const { messageId } = req.params;
+    const userId = req.user.userId;
 
     if (!validateObjectId(messageId, res, "message")) {
       return;
     }
 
-    const deletedMessage = await Message.findByIdAndDelete(messageId);
-
-    if (!deletedMessage) {
+    // Find the message first
+    const message = await Message.findById(messageId);
+    
+    if (!message) {
       return res.status(404).json({ error: "Message not found" });
     }
+    
+    // Check if the user is the sender of the message
+    if (message.sender.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized: You can only unsend your own messages" });
+    }
+
+    // Proceed with permanent deletion
+    const deletedMessage = await Message.findByIdAndDelete(messageId);
 
     res.status(200).json({ message: "Message unsent successfully" });
   } catch (error) {
@@ -285,9 +310,9 @@ module.exports.unsendMessage = async (req, res) => {
   }
 };
 
-/**
- * Add a reaction to a message.
- */
+
+ //Add a reaction to a message.
+ 
 module.exports.addReaction = async (req, res) => {
   try {
     const { messageId } = req.params;
@@ -319,7 +344,7 @@ module.exports.addReaction = async (req, res) => {
   }
 }; 
 
-
+//remove reaction
 module.exports.removeReaction = async (req, res) => {
   try {
     const sender = req.user.userId;
@@ -345,7 +370,7 @@ module.exports.removeReaction = async (req, res) => {
     res.status(500).json({ error: "Error removing reaction" });
   }
 };
-
+//forward message
 module.exports.forwardMessage = async (req, res) => {
   try {
     const sender = req.user.userId;
@@ -383,6 +408,7 @@ module.exports.forwardMessage = async (req, res) => {
   }
 };
 
+//search messages
 module.exports.searchMessages = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -419,9 +445,9 @@ module.exports.searchMessages = async (req, res) => {
   }
 };
 
-/**
- * Pin/Unpin a message in a conversation
- */
+
+ //Pin/Unpin a message in a conversation
+ 
 module.exports.togglePinMessage = async (req, res) => {
   try {
     const { messageId } = req.params;
@@ -434,6 +460,11 @@ module.exports.togglePinMessage = async (req, res) => {
     const message = await Message.findById(messageId);
     if (!message) {
       return res.status(404).json({ error: "Message not found" });
+    }
+
+    // Check if the user is the sender of the message
+    if (message.sender.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized: You can only pin/unpin your own messages" });
     }
 
     // Toggle pin status
@@ -454,9 +485,8 @@ module.exports.togglePinMessage = async (req, res) => {
   }
 };
 
-/**
- * Get pinned messages in a conversation
- */
+ //Get pinned messages in a conversation
+ 
 module.exports.getPinnedMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;

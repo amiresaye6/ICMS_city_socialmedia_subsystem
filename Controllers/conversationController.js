@@ -314,3 +314,409 @@ module.exports.getPinnedConversations = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch pinned conversations" });
   }
 };
+
+/**
+ * Get all conversations for a user with unread counts and last message
+ */
+module.exports.getConversationsForUser = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    
+    // Validate that the requesting user is fetching their own conversations
+    if (userId !== req.user.userId) {
+      return res.status(403).json({ error: "Forbidden: You can only view your own conversations" });
+    }
+
+    // Find all conversations where the user is a participant and not deleted for them
+    const conversations = await Conversation.find({
+      participants: userId,
+      deletedFor: { $ne: userId }
+    })
+    .populate("lastMessage")
+    .sort({ updatedAt: -1 });
+
+    // Get unread counts for each conversation
+    const conversationsWithUnread = await Promise.all(
+      conversations.map(async (conversation) => {
+        // Count unread messages
+        const unreadCount = await Message.countDocuments({
+          conversation: conversation._id,
+          sender: { $ne: userId },
+          readBy: { $ne: userId },
+          createdAt: { $gt: conversation.userSettings.find(s => s.userId === userId)?.lastSeen || new Date(0) }
+        });
+
+        // Format the response
+        return {
+          _id: conversation._id,
+          name: conversation.getNameForUser(userId),
+          isGroup: conversation.isGroup,
+          participants: conversation.participants,
+          lastMessage: conversation.lastMessage,
+          unreadCount,
+          isPinned: conversation.pinnedUsers.includes(userId),
+          isArchived: conversation.archivedUsers.includes(userId),
+          isMuted: conversation.isMuted(userId),
+          updatedAt: conversation.updatedAt,
+          userSettings: conversation.getUserSettings(userId)
+        };
+      })
+    );
+
+    // Sort by pinned status first, then by last message date
+    conversationsWithUnread.sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+
+    res.status(200).json(conversationsWithUnread);
+  } catch (error) {
+    console.error("Error fetching conversations:", error);
+    res.status(500).json({ error: "Failed to fetch conversations" });
+  }
+};
+
+/**
+ * Create a new group conversation
+ */
+module.exports.createGroupConversation = async (req, res) => {
+  try {
+    const { name, participants } = req.body;
+    const userId = req.user.userId;
+
+    // Validate input
+    if (!name || !participants || !Array.isArray(participants) || participants.length < 2) {
+      return res.status(400).json({ 
+        error: "Invalid input. Group name and at least 2 participants are required" 
+      });
+    }
+
+    // Ensure the creator is included in participants
+    if (!participants.includes(userId)) {
+      participants.push(userId);
+    }
+
+    // Create the group conversation
+    const conversation = await Conversation.create({
+      name,
+      participants,
+      isGroup: true,
+      groupAdmin: userId,
+      groupSettings: {
+        description: req.body.description || "",
+        avatar: req.body.avatar || null
+      }
+    });
+
+    res.status(201).json({ 
+      message: "Group conversation created successfully", 
+      conversation 
+    });
+  } catch (error) {
+    console.error("Error creating group conversation:", error);
+    res.status(500).json({ error: "Failed to create group conversation" });
+  }
+};
+
+/**
+ * Update group settings
+ */
+module.exports.updateGroupSettings = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.userId;
+    const { name, description, avatar, permissions } = req.body;
+
+    // Find the conversation
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+
+    // Check if it's a group conversation
+    if (!conversation.isGroup) {
+      return res.status(400).json({ error: "This is not a group conversation" });
+    }
+
+    // Check if the user is an admin
+    if (conversation.groupAdmin !== userId) {
+      return res.status(403).json({ 
+        error: "Forbidden: Only group admin can update group settings" 
+      });
+    }
+
+    // Update the settings
+    if (name) conversation.name = name;
+    
+    if (description !== undefined) {
+      conversation.groupSettings.description = description;
+    }
+    
+    if (avatar !== undefined) {
+      conversation.groupSettings.avatar = avatar;
+    }
+    
+    if (permissions) {
+      // Update permissions if provided
+      Object.keys(permissions).forEach(key => {
+        if (conversation.groupSettings.permissions[key] !== undefined) {
+          conversation.groupSettings.permissions[key] = permissions[key];
+        }
+      });
+    }
+
+    await conversation.save();
+
+    res.status(200).json({ 
+      message: "Group settings updated successfully", 
+      conversation 
+    });
+  } catch (error) {
+    console.error("Error updating group settings:", error);
+    res.status(500).json({ error: "Failed to update group settings" });
+  }
+};
+
+/**
+ * Generate or refresh group join link
+ */
+module.exports.generateJoinLink = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.userId;
+    const { expiryHours } = req.body;
+
+    // Find the conversation
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+
+    // Check if it's a group conversation
+    if (!conversation.isGroup) {
+      return res.status(400).json({ error: "This is not a group conversation" });
+    }
+
+    // Check if the user is an admin
+    if (conversation.groupAdmin !== userId) {
+      return res.status(403).json({ 
+        error: "Forbidden: Only group admin can generate join links" 
+      });
+    }
+
+    // Generate a unique join link
+    const joinCode = crypto.randomBytes(6).toString('hex');
+    const joinLink = `http://graduation.amiralsayed.me/join/${joinCode}`;
+    
+    // Set expiry if provided
+    let joinLinkExpiry = null;
+    if (expiryHours && !isNaN(expiryHours)) {
+      joinLinkExpiry = new Date();
+      joinLinkExpiry.setHours(joinLinkExpiry.getHours() + parseInt(expiryHours));
+    }
+
+    // Update the conversation
+    conversation.groupSettings.joinLink = joinLink;
+    conversation.groupSettings.joinLinkExpiry = joinLinkExpiry;
+    await conversation.save();
+
+    res.status(200).json({ 
+      message: "Join link generated successfully", 
+      joinLink,
+      expiresAt: joinLinkExpiry
+    });
+  } catch (error) {
+    console.error("Error generating join link:", error);
+    res.status(500).json({ error: "Failed to generate join link" });
+  }
+};
+
+/**
+ * Join a group conversation using a join link
+ */
+module.exports.joinGroupWithLink = async (req, res) => {
+  try {
+    const { joinCode } = req.params;
+    const userId = req.user.userId;
+
+    // Find the conversation with this join link
+    const conversation = await Conversation.findOne({
+      'groupSettings.joinLink': { $regex: joinCode }
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ error: "Invalid or expired join link" });
+    }
+
+    // Check if the link has expired
+    if (conversation.groupSettings.joinLinkExpiry && 
+        new Date() > conversation.groupSettings.joinLinkExpiry) {
+      return res.status(400).json({ error: "Join link has expired" });
+    }
+
+    // Check if user is already a participant
+    if (conversation.participants.includes(userId)) {
+      return res.status(400).json({ error: "You are already a member of this group" });
+    }
+
+    // Add user to participants
+    conversation.participants.push(userId);
+    
+    // If user previously left, remove from leftUsers
+    conversation.leftUsers = conversation.leftUsers.filter(
+      user => user.userId !== userId
+    );
+    
+    await conversation.save();
+
+    res.status(200).json({ 
+      message: "Successfully joined the group", 
+      conversation 
+    });
+  } catch (error) {
+    console.error("Error joining group:", error);
+    res.status(500).json({ error: "Failed to join group" });
+  }
+};
+
+/**
+ * Leave a group conversation
+ */
+module.exports.leaveGroup = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.userId;
+
+    // Find the conversation
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+
+    // Check if it's a group conversation
+    if (!conversation.isGroup) {
+      return res.status(400).json({ error: "This is not a group conversation" });
+    }
+
+    // Check if user is a participant
+    if (!conversation.participants.includes(userId)) {
+      return res.status(400).json({ error: "You are not a member of this group" });
+    }
+
+    // If user is the admin and there are other participants, transfer admin role
+    if (conversation.groupAdmin === userId && conversation.participants.length > 1) {
+      // Find another participant to make admin
+      const newAdmin = conversation.participants.find(p => p !== userId);
+      conversation.groupAdmin = newAdmin;
+    }
+
+    // Remove user from participants
+    conversation.participants = conversation.participants.filter(
+      p => p !== userId
+    );
+    
+    // Add to leftUsers
+    conversation.leftUsers.push({
+      userId,
+      leftAt: new Date()
+    });
+    
+    // If no participants left, delete the conversation
+    if (conversation.participants.length === 0) {
+      await Conversation.findByIdAndDelete(conversationId);
+      return res.status(200).json({ message: "You left the group and it was deleted (no members left)" });
+    }
+    
+    await conversation.save();
+
+    res.status(200).json({ message: "You have left the group successfully" });
+  } catch (error) {
+    console.error("Error leaving group:", error);
+    res.status(500).json({ error: "Failed to leave group" });
+  }
+};
+
+/**
+ * Update user-specific settings for a conversation
+ */
+module.exports.updateUserSettings = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.userId;
+    const { nickname, color, notifications } = req.body;
+
+    // Find the conversation
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+
+    // Check if user is a participant
+    if (!conversation.participants.includes(userId)) {
+      return res.status(403).json({ 
+        error: "Forbidden: You are not a participant in this conversation" 
+      });
+    }
+
+    // Find existing settings or create new ones
+    let userSettings = conversation.userSettings.find(
+      setting => setting.userId === userId
+    );
+    
+    if (!userSettings) {
+      userSettings = { userId };
+      conversation.userSettings.push(userSettings);
+    }
+    
+    // Update settings
+    if (nickname !== undefined) userSettings.nickname = nickname;
+    if (color !== undefined) userSettings.color = color;
+    if (notifications !== undefined) userSettings.notifications = notifications;
+    
+    await conversation.save();
+
+    res.status(200).json({ 
+      message: "User settings updated successfully", 
+      settings: userSettings 
+    });
+  } catch (error) {
+    console.error("Error updating user settings:", error);
+    res.status(500).json({ error: "Failed to update user settings" });
+  }
+};
+
+/**
+ * Delete conversation for a user (soft delete)
+ */
+module.exports.deleteConversationForUser = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.userId;
+
+    // Find the conversation
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+
+    // Check if user is a participant
+    if (!conversation.participants.includes(userId)) {
+      return res.status(403).json({ 
+        error: "Forbidden: You are not a participant in this conversation" 
+      });
+    }
+
+    // Add user to deletedFor array
+    if (!conversation.deletedFor.includes(userId)) {
+      conversation.deletedFor.push(userId);
+    }
+    
+    await conversation.save();
+
+    res.status(200).json({ message: "Conversation deleted successfully for you" });
+  } catch (error) {
+    console.error("Error deleting conversation for user:", error);
+    res.status(500).json({ error: "Failed to delete conversation" });
+  }
+};
