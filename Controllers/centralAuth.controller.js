@@ -3,7 +3,7 @@ const mailer = require("../Middlewares/emailSender.middleware");
 const fetch = require("node-fetch");
 const User = require("../Models/users.model");
 
-const baseUrl = "https://cms-central-ffb6acaub5afeecj.uaenorth-01.azurewebsites.net/api/Auth/login"
+const baseUrl = "https://central-user-management.agreeabledune-30ad0cb8.uaenorth.azurecontainerapps.io/api/Auth/login"
 
 
 module.exports.centralLogin = async (req, res) => {
@@ -31,7 +31,7 @@ module.exports.centralLogin = async (req, res) => {
         }
 
         // Check if the user already exists in the local database
-        const myUser = await User.findOne({centralUsrId: user.value.id})
+        const myUser = await User.findOne({ centralUsrId: user.value.id })
         if (!myUser) {
             // create a new user
             const newUser = new User({
@@ -78,8 +78,8 @@ module.exports.centralLogin = async (req, res) => {
         `;
 
         // mailer.sendEmail(email, emailSubject, emailText)
-            // .then(() => console.log("Login notification email sent successfully"))
-            // .catch((error) => console.error("Failed to send login notification email:", error));
+        // .then(() => console.log("Login notification email sent successfully"))
+        // .catch((error) => console.error("Failed to send login notification email:", error));
 
     } catch (error) {
         console.error("Error during login:", error);
