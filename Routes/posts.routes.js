@@ -2,7 +2,7 @@ const router = require("express").Router();
 const postsController = require("../Controllers/posts.controller");
 const authMiddleware = require("../Middlewares/auth.middleware");
 const centralAuthMiddleware = require("../Middlewares/centralAuth.middleware");
-const upload = require("../Middlewares/fileUpload.middleware");
+const { upload, processImage } = require("../Middlewares/fileUpload.middleware");
 const postsValidator = require("../Validator/posts.validator");
 //  **POST ROUTES**
 
@@ -30,6 +30,7 @@ router.post(
   "/",
   centralAuthMiddleware.centralAuthenticate,
   upload.array("media", 5),
+  processImage,
   postsValidator.validateCreatePost,
   postsController.createPost
 );
@@ -38,6 +39,7 @@ router.post(
   "/admin",
   centralAuthMiddleware.isUserAdmin,
   upload.array("media", 5),
+  processImage,
   postsValidator.validateCreatePost,
   postsController.createAdminPost
 );

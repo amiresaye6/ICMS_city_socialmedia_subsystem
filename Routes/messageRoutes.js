@@ -3,7 +3,7 @@ const messageController = require("../Controllers/messageController");
 const router = express.Router();
 const authMiddleware = require("../Middlewares/auth.middleware");
 const centralAuthMiddleware = require("../Middlewares/centralAuth.middleware");
-const upload = require("../Middlewares/fileUpload.middleware");
+const { upload, processImage } = require("../Middlewares/fileUpload.middleware");
 
 
 
@@ -11,7 +11,8 @@ const upload = require("../Middlewares/fileUpload.middleware");
 router.post("/send",
 centralAuthMiddleware.centralAuthenticate,
 upload.array('attachments', 10),
- messageController.sendMessage); 
+processImage,
+ messageController.sendMessage);
 
 // Get messages between two users
 router.get("/:user1/:user2",
