@@ -59,8 +59,4 @@ mongoose.connect(MONGODB_CONNECTION_STRING)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('Failed to connect to MongoDB', err));
 
-// Start the server
-
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-}); 
+module.exports = app;
