@@ -12,6 +12,7 @@ const xss = require("xss-clean");
 const compression = require("compression");
 require('dotenv').config();                 // Middleware for environment variable management
 
+
 // import routes
 const postsRoutes = require("./Routes/posts.routes");
 const commentsRoutes = require("./Routes/comments.routes");
@@ -19,6 +20,7 @@ const usersRoutes = require("./Routes/users.routes");
 const centralAuthRoutes = require("./Routes/centraAuth.routes");
 const messageRoutes = require("./Routes/messageRoutes");
 const conversationRoutes = require("./Routes/conversationRoutes");
+const searchRoutes = require("./Routes/searchRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -47,6 +49,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/auth", centralAuthRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/conversations", conversationRoutes);
+app.use("/api/search", searchRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 handleSocketConnection(io); //webSocket chat connection
