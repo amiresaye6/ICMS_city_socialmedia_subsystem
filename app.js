@@ -21,11 +21,15 @@ const centralAuthRoutes = require("./Routes/centraAuth.routes");
 const messageRoutes = require("./Routes/messageRoutes");
 const conversationRoutes = require("./Routes/conversationRoutes");
 const searchRoutes = require("./Routes/searchRoutes");
+const uploadRoutes = require("./Routes/upload.routes");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: "*" } });
- 
+
+// Make io accessible to controllers
+app.set('io', io);
+
 const { handleSocketConnection } = require("./socket");
 // Middleware section
 app.use(express.json());                    // Parse incoming JSON payloads
@@ -50,6 +54,7 @@ app.use("/api/auth", centralAuthRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/upload", uploadRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 handleSocketConnection(io); //webSocket chat connection

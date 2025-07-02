@@ -3,6 +3,8 @@ const Conversation = require("./Models/conversation.model");
 
 const onlineUsers = new Map(); // Store online users in memory
 const messageRateLimit = new Map(); // Track message sending timestamps for rate limiting
+const typingUsers = new Map(); // Track typing users per conversation
+const typingTimeouts = new Map(); // Track typing timeouts to auto-stop typing
 
 const handleSocketConnection = (io) => {
   io.on("connection", (socket) => {
@@ -33,14 +35,129 @@ const handleSocketConnection = (io) => {
       }
     });
 
-    // Notify others when a user is typing
-    socket.on("typing", ({ conversationId, userId }) => {
-      socket.to(conversationId).emit("user-typing", { userId });
+    // Enhanced typing indicators with auto-timeout
+    socket.on("typing", ({ conversationId, userId, userName }) => {
+      if (!conversationId || !userId) {
+        return socket.emit("error", {
+          message: "Missing required fields",
+          required: ["conversationId", "userId"]
+        });
+      }
+
+      // Initialize typing users for this conversation if not exists
+      if (!typingUsers.has(conversationId)) {
+        typingUsers.set(conversationId, new Set());
+      }
+
+      const conversationTypingUsers = typingUsers.get(conversationId);
+      const timeoutKey = `${conversationId}-${userId}`;
+
+      // Clear existing timeout for this user (if any)
+      if (typingTimeouts.has(timeoutKey)) {
+        clearTimeout(typingTimeouts.get(timeoutKey));
+      }
+
+      // Add user to typing list if not already typing
+      if (!conversationTypingUsers.has(userId)) {
+        conversationTypingUsers.add(userId);
+
+        // Notify others in the conversation (exclude sender)
+        socket.to(conversationId).emit("user-typing", {
+          userId,
+          userName: userName || 'User',
+          conversationId,
+          timestamp: new Date().toISOString()
+        });
+
+        console.log(`  ${userName || userId} started typing in ${conversationId}`);
+      }
+
+      // Set/reset auto-stop typing after 3 seconds of inactivity
+      const timeout = setTimeout(() => {
+        if (conversationTypingUsers && conversationTypingUsers.has(userId)) {
+          conversationTypingUsers.delete(userId);
+
+          // Clean up empty conversation sets
+          if (conversationTypingUsers.size === 0) {
+            typingUsers.delete(conversationId);
+          }
+
+          // Notify others that user stopped typing
+          socket.to(conversationId).emit("user-stopped-typing", {
+            userId,
+            userName: userName || 'User',
+            conversationId,
+            reason: "timeout",
+            timestamp: new Date().toISOString()
+          });
+
+          console.log(` ${userName || userId} auto-stopped typing (timeout)`);
+        }
+        typingTimeouts.delete(timeoutKey);
+      }, 3000); // 3 seconds timeout
+
+      typingTimeouts.set(timeoutKey, timeout);
     });
 
-    // Notify when the user stops typing
-    socket.on("stop-typing", ({ conversationId, userId }) => {
-      socket.to(conversationId).emit("user-stopped-typing", { userId });
+    //  Manual stop typing
+    socket.on("stop-typing", ({ conversationId, userId, userName }) => {
+      if (!conversationId || !userId) {
+        return socket.emit("error", {
+          message: "Missing required fields",
+          required: ["conversationId", "userId"]
+        });
+      }
+
+      const conversationTypingUsers = typingUsers.get(conversationId);
+      const timeoutKey = `${conversationId}-${userId}`;
+
+      if (conversationTypingUsers && conversationTypingUsers.has(userId)) {
+        conversationTypingUsers.delete(userId);
+
+        // Clean up empty conversation sets
+        if (conversationTypingUsers.size === 0) {
+          typingUsers.delete(conversationId);
+        }
+
+        // Clear timeout
+        if (typingTimeouts.has(timeoutKey)) {
+          clearTimeout(typingTimeouts.get(timeoutKey));
+          typingTimeouts.delete(timeoutKey);
+        }
+
+        // Notify others that user stopped typing
+        socket.to(conversationId).emit("user-stopped-typing", {
+          userId,
+          userName: userName || 'User',
+          conversationId,
+          reason: "manual",
+          timestamp: new Date().toISOString()
+        });
+
+        console.log(` ${userName || userId} manually stopped typing`);
+      }
+    });
+
+    //  Get current typing users in a conversation
+    socket.on("get-typing-users", ({ conversationId }) => {
+      if (!conversationId) {
+        return socket.emit("error", {
+          message: "Missing conversationId",
+          code: "MISSING_CONVERSATION_ID"
+        });
+      }
+
+      const conversationTypingUsers = typingUsers.get(conversationId);
+      const typingUsersList = conversationTypingUsers ? Array.from(conversationTypingUsers) : [];
+
+      socket.emit("typing-users-list", {
+        conversationId,
+        typingUsers: typingUsersList,
+        count: typingUsersList.length,
+        timestamp: new Date().toISOString()
+      });
+
+      console.log(` Sent typing users list for ${conversationId}: ${typingUsersList.length} users`);
     });
 
     // Handle sending a message
@@ -256,8 +373,39 @@ const handleSocketConnection = (io) => {
       const userId = [...onlineUsers.entries()].find(([_, id]) => id === socket.id)?.[0];
 
       if (userId) {
-        // Remove user from Map
+        // Remove user from online users Map
         onlineUsers.delete(userId);
+
+        // Clean up typing indicators for this user
+        typingUsers.forEach((conversationTypingUsers, conversationId) => {
+          if (conversationTypingUsers.has(userId)) {
+            conversationTypingUsers.delete(userId);
+
+            // Notify others that user stopped typing
+            socket.to(conversationId).emit("user-stopped-typing", {
+              userId,
+              conversationId,
+              reason: "disconnected",
+              timestamp: new Date().toISOString()
+            });
+
+            // Clean up empty conversation sets
+            if (conversationTypingUsers.size === 0) {
+              typingUsers.delete(conversationId);
+            }
+
+            console.log(`👤 User ${userId} stopped typing due to disconnect in conversation ${conversationId}`);
+          }
+        });
+
+        // Clear all typing timeouts for this user
+        typingTimeouts.forEach((timeout, key) => {
+          if (key.includes(userId)) {
+            clearTimeout(timeout);
+            typingTimeouts.delete(key);
+          }
+        });
+
         // Notify other users that this user is now offline
         io.emit("user-status-update", { userId, status: "offline" });
       }
