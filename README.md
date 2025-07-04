@@ -77,4 +77,4 @@ I want you to know that contributions are welcome.
 This project is licensed under the MIT License. Please take a look at the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
-Thanks to our team and mentors at [University/Organization Name] for their guidance and support.
+Thanks to our team at [citio].

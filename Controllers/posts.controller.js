@@ -75,20 +75,22 @@ exports.createPost = async (req, res) => {
       return res.status(400).json({ error: "Post caption is required" });
     }
 
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: "At least one media file is required" });
+    // if (!req.files || req.files.length === 0) {
+    //   return res.status(400).json({ error: "At least one media file is required" });
+    // }
+    let media = [];
+    if (req.files && req.files.length !== 0) {
+      media = req.files.map((file) => {
+        const type = getMediaType(file.mimetype);
+        if (!["image", "video", "audio"].includes(type)) {
+          throw new Error(`Invalid media type detected: ${type}`);
+        }
+        return {
+          type,
+          url: `/public/uploads/posts/${file.filename}`,
+        };
+      });
     }
-
-    const media = req.files.map((file) => {
-      const type = getMediaType(file.mimetype);
-      if (!["image", "video", "audio"].includes(type)) {
-        throw new Error(`Invalid media type detected: ${type}`);
-      }
-      return {
-        type,
-        url: `/public/uploads/posts/${file.filename}`,
-      };
-    });
 
     if (!req.user || !req.user.userId) {
       return res.status(401).json({ error: "Unauthorized: User not authenticated" });
@@ -283,12 +285,23 @@ exports.sharePost = async (req, res) => {
       { centralUsrId: userId },
       { $push: { sharedPosts: { postId, shareCaption } } }
     );
+
+    const newPost = await Post.create(
+      {
+        author: userId,
+        postCaption: shareCaption,
+        media: post.media,
+        sharedPost: true,
+        originalPost: {
+          postId,
+          caption: post.postCaption,
+          originalAuthor: post.author
+        }
+      }
+    );
     await post.save();
 
-    res.status(200).json({
-      message: "User added to the share list successfully",
-      post,
-    });
+    res.status(201).json(newPost);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });

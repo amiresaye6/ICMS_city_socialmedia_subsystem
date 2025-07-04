@@ -11,6 +11,10 @@ const postSchema = new Schema(
             type: Boolean,
             default: false
         },
+        sharedPost: {
+            type: Boolean,
+            default: false
+        },
         availability: {
             type: String,
             enum: ['public', 'private', 'friends', 'specific_groups'],
@@ -86,6 +90,21 @@ const postSchema = new Schema(
                 required: true
             }
         ],
+        originalPost:
+        {
+            postId: {
+                type: Schema.Types.ObjectId,
+                ref: 'Post'
+            },
+            caption: {
+                type: String,
+                default: '',
+                trim: true
+            },
+            originalAuthor: {
+                type: String
+            }
+        },
         comments: [
             {
                 type: Schema.Types.ObjectId,
@@ -112,23 +131,7 @@ const postSchema = new Schema(
                 type: String,
                 required: true
             }
-        ],
-        flags: [
-            {
-                userId: {
-                    type: String,
-                    required: true
-                },
-                reason: {
-                    type: String,
-                    trim: true
-                },
-                date: {
-                    type: Date,
-                    default: Date.now
-                }
-            }
-        ],
+        ]
     },
     {
         timestamps: true // Adds createdAt and updatedAt fields
