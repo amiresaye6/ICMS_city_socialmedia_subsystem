@@ -531,4 +531,79 @@ fetch('http://graduation.amiralsayed.me/api/users/changeRole', {
 }
 ```
 
----
+
+## Record User
+
+**Endpoint:** `POST /api/users/record`
+
+**Description:** Creates a local user record by fetching user data from the central user management system. If the user already exists locally, returns the existing record.
+
+**Headers:**
+- `Authorization: Bearer <token>` (required)
+
+**Request Body:** None
+
+**Example Request:**
+```javascript
+fetch('http://graduation.amiralsayed.me/api/users/record', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer your_jwt_token'
+    }
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+**Success Response (201 - New User Created):**
+```json
+{
+    "message": "User recorded successfully",
+    "user": {
+        "_id": "507f1f77bcf86cd799439011",
+        "centralUsrId": "user123",
+        "userName": "john@example.com",
+        "localUserName": "John Doe",
+        "email": "john@example.com",
+        "avatarUrl": "/public/uploads/default.png",
+        "bio": "hi there!",
+        "role": "user",
+        "friends": [],
+        "posts": [],
+        "savedPosts": [],
+        "sharedPosts": [],
+        "createdAt": "2025-02-24T10:00:00Z",
+        "updatedAt": "2025-02-24T10:00:00Z"
+    }
+}
+```
+
+**Success Response (200 - User Already Exists):**
+```json
+{
+    "message": "User already recorded",
+    "user": {
+        "_id": "507f1f77bcf86cd799439011",
+        "centralUsrId": "user123",
+        "userName": "john@example.com",
+        "localUserName": "John Doe",
+        "email": "john@example.com",
+        "avatarUrl": "/public/uploads/avatar/1733839688988-avatar.jpg",
+        "bio": "Updated bio",
+        "role": "user",
+        "friends": [],
+        "posts": [],
+        "savedPosts": [],
+        "sharedPosts": [],
+        "createdAt": "2025-02-24T10:00:00Z",
+        "updatedAt": "2025-02-24T10:05:00Z"
+    }
+}
+```
+
+**Error Response (500):**
+```json
+{
+    "message": "Internal server error: Specific error message"
+}
+```
