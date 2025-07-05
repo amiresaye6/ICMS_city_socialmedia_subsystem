@@ -1,6 +1,7 @@
 const User = require("../Models/users.model");
 const { isUserAllowed } = require("../Middlewares/centralAuth.middleware");
-const { validationResult } = require("express-validator")
+const { validationResult } = require("express-validator");
+const fetch = require("node-fetch");
 
 module.exports.getAllUsers = async (req, res) => {
     try {
@@ -319,6 +320,43 @@ module.exports.changeUserRole = async (req, res) => {
             message: "Failed to change user role",
             error: error.message
         });
+    }
+}
+
+module.exports.addRecord = async (req, res) => {
+    try {
+        const { userId } = req.user;
+
+        const user = await fetch(`https://central-user-management.agreeabledune-30ad0cb8.uaenorth.azurecontainerapps.io/api/User/${userId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': process.env.X_API_KEY
+            }
+        }).then(res => res.json());
+
+        const myUser = await User.findOne({ centralUsrId: user.value.id })
+        if (!myUser) {
+            // create a new user
+            const newUser = new User({
+                centralUsrId: user.value.id,
+                userName: user.value.email,
+                localUserName: user.value.fullName,
+                email: user.value.email,
+                avatarUrl: user.value.imageUrl || "/public/uploads/default.png",
+            });
+            await newUser.save();
+            return res.status(201).json({
+                message: "User recorded successfully",
+                user: newUser
+            });
+        }
+        return res.status(200).json({
+            message: "User already recorded"
+        })
+
+    } catch (error) {
+        res.status(500).json({ message: `Internal server error: ${error.message}` });
     }
 }
 

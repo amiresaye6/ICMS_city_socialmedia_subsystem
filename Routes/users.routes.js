@@ -12,6 +12,6 @@ router.put('/me', centralAuthMiddleware.centralAuthenticate, usersController.cha
 router.put('/me/avatar', centralAuthMiddleware.centralAuthenticate, upload.array("avatar", 1), usersController.changeAvatar);
 router.put('/me/cover', centralAuthMiddleware.centralAuthenticate, upload.array("cover", 1), usersController.changeCover);
 router.put('/me/bio', centralAuthMiddleware.centralAuthenticate, usersController.changeBio);
-
+router.post('/record', centralAuthMiddleware.centralAuthenticate, usersController.addRecord)
 
 module.exports = router;
