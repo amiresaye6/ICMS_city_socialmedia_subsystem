@@ -408,42 +408,6 @@ module.exports.forwardMessage = async (req, res) => {
   }
 };
 
-//search messages
-module.exports.searchMessages = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const { query } = req.query;
-    
-    if (!query || typeof query !== "string") {
-      return res.status(400).json({ error: "Search query is required" });
-    }
-    
-    // Find conversations where user is a participant
-    const conversations = await Conversation.find({
-      participants: userId
-    });
-    
-    if (conversations.length === 0) {
-      return res.status(200).json([]);
-    }
-    
-    const conversationIds = conversations.map(conv => conv._id);
-    
-    // Search for messages in user's conversations
-    const messages = await Message.find({
-      conversation: { $in: conversationIds },
-      content: { $regex: query, $options: 'i' },
-      deleted: false
-    })
-    .sort({ createdAt: -1 })
-    .populate("sender", "username avatar")
-    .limit(20);
-    
-    res.status(200).json(messages);
-  } catch (error) {
-    res.status(500).json({ error: "Error searching messages", details: error.message });
-  }
-};
 
 
  //Pin/Unpin a message in a conversation

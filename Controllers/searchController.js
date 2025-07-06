@@ -121,7 +121,7 @@ const searchMessagesRaw = async (userId, query, limitNum) => {
  */
 module.exports.searchUsers = async (req, res) => {
   try {
-    const currentUserId = req.user.userId;
+    const centralUsrIdFromToken = req.user.userId;
     const { query, page = 1, limit = 20 } = req.query;
 
     if (!query || query.trim().length < 1) {
@@ -132,16 +132,19 @@ module.exports.searchUsers = async (req, res) => {
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
+    // Find current user by centralUsrId to get the MongoDB _id
+    const currentUser = await User.findOne({ centralUsrId: centralUsrIdFromToken });
+    if (!currentUser) {
+      return res.status(404).json({ error: 'Current user not found' });
+    }
+
+    // Use _id for excluding self
     const searchCriteria = {
-      $and: [
-        { centralUsrId: { $ne: currentUserId } },
-        {
-          $or: [
-            { userName: { $regex: query, $options: 'i' } },
-            { localUserName: { $regex: query, $options: 'i' } },
-            { email: { $regex: query, $options: 'i' } }
-          ]
-        }
+      _id: { $ne: currentUser._id },
+      $or: [
+        { userName: { $regex: query, $options: 'i' } },
+        { localUserName: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } }
       ]
     };
 
@@ -152,12 +155,6 @@ module.exports.searchUsers = async (req, res) => {
       .sort({ userName: 1 })
       .skip(skip)
       .limit(limitNum);
-
-    // Get current user's MongoDB _id for conversation lookup
-    const currentUser = await User.findOne({ centralUsrId: currentUserId });
-    if (!currentUser) {
-      return res.status(404).json({ error: 'Current user not found' });
-    }
 
     const usersWithConversationStatus = await Promise.all(
       users.map(async (user) => {

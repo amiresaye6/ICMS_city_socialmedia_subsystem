@@ -54,10 +54,7 @@ router.put("/:messageId/reaction/remove",
     centralAuthMiddleware.centralAuthenticate,
     messageController.removeReaction);
 
-// Search messages
-router.get("/search", 
-    centralAuthMiddleware.centralAuthenticate,
-    messageController.searchMessages);
+
 
 // Forward a message
 router.post("/forward",
